@@ -1,7 +1,8 @@
 @main
 public struct SwiftKilo {
     public static func main() {
-        if let str = readLine() {
+        while let str = readLine(),
+              str != "q" {
             print(str)
         }
     }
