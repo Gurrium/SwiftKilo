@@ -2,7 +2,13 @@ import Foundation
 
 @main
 public struct SwiftKilo {
+    private static let instance = SwiftKilo()
+
     public static func main() {
+        instance.main()
+    }
+
+    private func main() {
         enableRawMode()
 
         var char: UInt8 = 0
@@ -13,7 +19,7 @@ public struct SwiftKilo {
         }
     }
 
-    private static func enableRawMode() {
+    private func enableRawMode() {
         var raw = termios()
         tcgetattr(STDIN_FILENO, &raw)
 
