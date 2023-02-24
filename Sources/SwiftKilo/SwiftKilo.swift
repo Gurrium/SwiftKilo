@@ -1,11 +1,19 @@
 import Foundation
 
 @main
-public struct SwiftKilo {
-    private static let instance = SwiftKilo()
-
+public class SwiftKilo {
     public static func main() {
-        instance.main()
+        SwiftKilo().main()
+    }
+
+    private var origTermios: termios
+
+    init() {
+        origTermios = termios()
+    }
+
+    deinit {
+        disableRawMode()
     }
 
     private func main() {
@@ -20,11 +28,17 @@ public struct SwiftKilo {
     }
 
     private func enableRawMode() {
-        var raw = termios()
-        tcgetattr(STDIN_FILENO, &raw)
+        tcgetattr(STDIN_FILENO, &origTermios)
 
-        raw.c_lflag &= tcflag_t(truncatingIfNeeded: ~(ECHO))
+        var new = origTermios
+        tcgetattr(STDIN_FILENO, &new)
 
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
+        new.c_lflag &= tcflag_t(truncatingIfNeeded: ~(ECHO))
+
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &new)
+    }
+
+    private func disableRawMode() {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &origTermios)
     }
 }
