@@ -23,7 +23,7 @@ public class SwiftKilo {
         while read(FileHandle.standardInput.fileDescriptor, &char, 1) == 1,
               let parsed = String(bytes: [char], encoding: .utf8),
               parsed != "q" {
-            print(parsed)
+//            print(parsed)
         }
     }
 
@@ -31,7 +31,7 @@ public class SwiftKilo {
         tcgetattr(STDIN_FILENO, &origTermios)
 
         var new = origTermios
-        new.c_lflag &= ~tcflag_t(ECHO)
+        new.c_lflag &= ~tcflag_t(ECHO | ICANON)
 
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &new)
     }
