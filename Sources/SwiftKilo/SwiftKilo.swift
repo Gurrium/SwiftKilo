@@ -20,16 +20,14 @@ public class SwiftKilo {
         enableRawMode()
 
         var char: UInt8 = 0
-        while read(FileHandle.standardInput.fileDescriptor, &char, 1) == 1 {// FIXME: ASCII外の文字を渡すと破滅しそう
-            let char = Character(Unicode.Scalar(char))
-            guard char != "q" else { break }
+        while read(FileHandle.standardInput.fileDescriptor, &char, 1) == 1 { // FIXME: ASCII外の文字を渡すと破滅しそう
+            let scalar = Unicode.Scalar(char)
+            guard scalar != "q" else { break }
 
-            if char.unicodeScalars.allSatisfy({
-                CharacterSet.controlCharacters.contains($0)
-            }) {
-                print(char.unicodeScalars.map(\.value))
+            if CharacterSet.controlCharacters.contains(scalar) {
+                print(scalar.value)
             } else {
-                print("\(char.unicodeScalars.map(\.value)) ('\(char)')")
+                print("\(scalar.value) ('\(scalar)')")
             }
         }
     }
