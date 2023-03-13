@@ -2,8 +2,8 @@ import Foundation
 
 @main
 public class SwiftKilo {
-    public static func main() {
-        SwiftKilo().main()
+    public static func main() async throws {
+        try await SwiftKilo().main()
     }
 
     private var origTermios: termios
@@ -16,19 +16,30 @@ public class SwiftKilo {
         disableRawMode()
     }
 
-    private func main() {
+    private func main() async throws {
         enableRawMode()
 
-        var char: UInt8 = 0
-        while read(FileHandle.standardInput.fileDescriptor, &char, 1) == 1 { // FIXME: ASCII外の文字を渡すと破滅しそう
-            let scalar = Unicode.Scalar(char)
-            guard scalar != "q" else { break }
+        let keyPath = \String.count
 
-            if CharacterSet.controlCharacters.contains(scalar) {
-                print(scalar.value)
-            } else {
-                print("\(scalar.value) ('\(scalar)')")
+        let shouldWaitFlag = Container(content: true)
+        let iterator = Container(content: FileHandle.standardInput.bytes.characters.makeAsyncIterator())
+
+        let readTask = Task.detached {
+            return try await iterator.content
+        }
+
+        let timeoutTask = Task.detached {
+            while await shouldWaitFlag.content {
+                try await Task.sleep(nanoseconds: 1_000)
             }
+
+
+        }
+
+        for try await character in FileHandle.standardInput.bytes.characters {
+            guard character != "q" else { break }
+
+            print(character)
         }
     }
 
@@ -43,5 +54,23 @@ public class SwiftKilo {
 
     private func disableRawMode() {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &origTermios)
+    }
+}
+
+actor Container<T> {
+    var content: T
+
+    init(content: T) {
+        self.content = content
+    }
+
+    func set(_ content: T) {
+        self.content = content
+    }
+}
+
+extension Container where T: AsyncIteratorProtocol {
+    func next() async throws -> T.Element? {
+        try await content.next()
     }
 }
