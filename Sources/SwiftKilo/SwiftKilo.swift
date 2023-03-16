@@ -22,7 +22,11 @@ public class SwiftKilo {
         for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
             guard scalar != "q" else { break }
 
-            print(scalar)
+            if CharacterSet.controlCharacters.contains(scalar) {
+                print("\(scalar.value)")
+            } else {
+                print("\(scalar.value) ('\(scalar)')")
+            }
         }
     }
 
