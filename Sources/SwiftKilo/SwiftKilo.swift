@@ -23,9 +23,9 @@ public class SwiftKilo {
             guard scalar != "q" else { break }
 
             if CharacterSet.controlCharacters.contains(scalar) {
-                print("\(scalar.value)")
+                print("\(scalar.value)\r")
             } else {
-                print("\(scalar.value) ('\(scalar)')")
+                print("\(scalar.value) ('\(scalar)')\r")
             }
         }
     }
@@ -34,8 +34,9 @@ public class SwiftKilo {
         tcgetattr(STDIN_FILENO, &origTermios)
 
         var new = origTermios
-        new.c_iflag &= ~tcflag_t(IXON)
-        new.c_lflag &= ~tcflag_t(ECHO | ICANON | ISIG)
+        new.c_iflag &= ~tcflag_t(ICRNL | IXON)
+        new.c_oflag &= ~tcflag_t(OPOST)
+        new.c_lflag &= ~tcflag_t(ECHO | ICANON | IEXTEN | ISIG)
 
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &new)
     }
