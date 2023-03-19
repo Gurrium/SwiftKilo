@@ -34,8 +34,9 @@ public class SwiftKilo {
         tcgetattr(STDIN_FILENO, &origTermios)
 
         var new = origTermios
-        new.c_iflag &= ~tcflag_t(ICRNL | IXON)
+        new.c_iflag &= ~tcflag_t(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
         new.c_oflag &= ~tcflag_t(OPOST)
+        new.c_cflag |= tcflag_t(CS8)
         new.c_lflag &= ~tcflag_t(ECHO | ICANON | IEXTEN | ISIG)
 
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &new)
