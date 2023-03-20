@@ -20,12 +20,14 @@ public class SwiftKilo {
         enableRawMode()
 
         for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
-            guard scalar != "q" else { break }
-
-            if CharacterSet.controlCharacters.contains(scalar) {
+           if CharacterSet.controlCharacters.contains(scalar) {
                 print("\(scalar.value)\r")
             } else {
                 print("\(scalar.value) ('\(scalar)')\r")
+            }
+
+            if scalar.isControlKeyEquivalent(to: "q") {
+                break
             }
         }
     }
@@ -44,5 +46,14 @@ public class SwiftKilo {
 
     private func disableRawMode() {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &origTermios)
+    }
+}
+
+extension UnicodeScalar {
+    func isControlKeyEquivalent(to character: Character) -> Bool {
+        guard isASCII,
+              let asciiValue = character.asciiValue else { return false }
+
+        return self.value == UInt32(asciiValue & 0b00011111)
     }
 }
