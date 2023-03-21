@@ -20,11 +20,7 @@ public class SwiftKilo {
         enableRawMode()
 
         for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
-           if CharacterSet.controlCharacters.contains(scalar) {
-                print("\(scalar.value)\r")
-            } else {
-                print("\(scalar.value) ('\(scalar)')\r")
-            }
+            print("\u{1b}[2J")
 
             if scalar.isControlKeyEquivalent(to: "q") {
                 break
