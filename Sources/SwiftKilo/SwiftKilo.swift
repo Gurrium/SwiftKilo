@@ -20,12 +20,22 @@ public class SwiftKilo {
         enableRawMode()
 
         for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
-            print("\u{1b}[2J")
+            refreshScreen()
 
-            if scalar.isControlKeyEquivalent(to: "q") {
+            if process(scalar) {
                 break
             }
         }
+    }
+
+    private func refreshScreen() {
+        print("\u{1b}[2J")
+        print("\u{1b}[H")
+    }
+
+    // TODO: そのうち分岐が増えたらenumを返すようにする
+    private func process(_ scalar: UnicodeScalar) -> Bool {
+        return scalar.isControlKeyEquivalent(to: "q")
     }
 
     private func enableRawMode() {
