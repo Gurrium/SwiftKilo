@@ -23,6 +23,7 @@ public class SwiftKilo {
             refreshScreen()
 
             if process(scalar) {
+                refreshScreen()
                 break
             }
         }
