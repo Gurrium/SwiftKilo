@@ -19,6 +19,7 @@ public class SwiftKilo {
     private func main() async throws {
         enableRawMode()
 
+        // TODO: 一定間隔でUnicodeScalar?を返すAsyncSequenceにする
         for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
             refreshScreen()
 
@@ -29,14 +30,28 @@ public class SwiftKilo {
         }
     }
 
-    private func refreshScreen() {
-        print("\u{1b}[2J")
-        print("\u{1b}[H")
-    }
+    // MARK: key processing
 
     // TODO: そのうち分岐が増えたらenumを返すようにする
     private func process(_ scalar: UnicodeScalar) -> Bool {
         return scalar.isControlKeyEquivalent(to: "q")
+    }
+
+    // MARK: rendering
+
+    private func refreshScreen() {
+        print("\u{1b}[2J")
+        print("\u{1b}[H")
+
+        drawRows()
+
+        print("\u{1b}[H")
+    }
+
+    private func drawRows() {
+        (0..<24).forEach { _ in
+            print("~\r")
+        }
     }
 
     private func enableRawMode() {
