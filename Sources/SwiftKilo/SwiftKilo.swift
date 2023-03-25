@@ -2,14 +2,18 @@ import Foundation
 
 @main
 public class SwiftKilo {
+    struct EditorConfig {
+        var origTermios: termios
+    }
+
+    private var editorConfig: EditorConfig
+
     public static func main() async throws {
         try await SwiftKilo().main()
     }
 
-    private var origTermios: termios
-
     init() {
-        origTermios = termios()
+        editorConfig = EditorConfig(origTermios: .init())
     }
 
     deinit {
@@ -55,9 +59,9 @@ public class SwiftKilo {
     }
 
     private func enableRawMode() {
-        tcgetattr(STDIN_FILENO, &origTermios)
+        tcgetattr(STDIN_FILENO, &editorConfig.origTermios)
 
-        var new = origTermios
+        var new = editorConfig.origTermios
         new.c_iflag &= ~tcflag_t(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
         new.c_oflag &= ~tcflag_t(OPOST)
         new.c_cflag |= tcflag_t(CS8)
@@ -67,7 +71,7 @@ public class SwiftKilo {
     }
 
     private func disableRawMode() {
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &origTermios)
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &editorConfig.origTermios)
     }
 }
 
