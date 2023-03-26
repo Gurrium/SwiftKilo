@@ -6,13 +6,15 @@ public class SwiftKilo {
         var origTermios: termios
     }
 
-    private var editorConfig: EditorConfig
-
     public static func main() async throws {
         try await SwiftKilo().main()
     }
 
-    init() {
+    private let fileHandle: FileHandle
+    private var editorConfig: EditorConfig
+
+    init(fileHandle: FileHandle) {
+        self.fileHandle = fileHandle
         editorConfig = EditorConfig(origTermios: .init())
     }
 
@@ -24,7 +26,7 @@ public class SwiftKilo {
         enableRawMode()
 
         // TODO: 一定間隔でUnicodeScalar?を返すAsyncSequenceにする
-        for try await scalar in FileHandle.standardInput.bytes.unicodeScalars {
+        for try await scalar in fileHandle.bytes.unicodeScalars {
             refreshScreen()
 
             if process(scalar) {
@@ -56,6 +58,16 @@ public class SwiftKilo {
         (0..<24).forEach { _ in
             print("~\r")
         }
+    }
+
+    private func getWindowSize() -> (height: Int, width: Int)? {
+        var windowSize = winsize()
+
+        guard ioctl(fileHandle.fileDescriptor, TIOCGWINSZ, &windowSize) != -1 else {
+            return nil
+        }
+
+        return (height: Int(windowSize.ws_row), width: Int(windowSize.ws_col))
     }
 
     private func enableRawMode() {
