@@ -4,18 +4,27 @@ import Foundation
 public class SwiftKilo {
     struct EditorConfig {
         var origTermios: termios
+        var screenRows: Int
+        var screenCols: Int
     }
 
     public static func main() async throws {
-        try await SwiftKilo().main()
+        try await SwiftKilo()?.main()
     }
 
     private let fileHandle: FileHandle
-    private var editorConfig: EditorConfig
+    private var editorConfig: EditorConfig!
 
-    init(fileHandle: FileHandle) {
+    init?(fileHandle: FileHandle = .standardInput) {
         self.fileHandle = fileHandle
-        editorConfig = EditorConfig(origTermios: .init())
+
+        guard let (height, width) = getWindowSize() else { return nil }
+
+        editorConfig = EditorConfig(
+            origTermios: .init(),
+            screenRows: height,
+            screenCols: width
+        )
     }
 
     deinit {
@@ -55,7 +64,7 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        (0..<24).forEach { _ in
+        (0..<editorConfig.screenRows).forEach { _ in
             print("~\r")
         }
     }
