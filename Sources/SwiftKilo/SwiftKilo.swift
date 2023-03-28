@@ -1,5 +1,7 @@
 import Foundation
 
+// TODO: printではなくfileHandle.fileDescriptor.writeを使う
+
 @main
 public class SwiftKilo {
     struct EditorConfig {
@@ -39,7 +41,9 @@ public class SwiftKilo {
             refreshScreen()
 
             if process(scalar) {
-                refreshScreen()
+                print("\u{1b}[2J")
+                print("\u{1b}[H")
+
                 break
             }
         }
@@ -60,12 +64,12 @@ public class SwiftKilo {
 
         drawRows()
 
-        print("\u{1b}[H")
+        try? fileHandle.write(contentsOf: Array("\u{1b}[H".utf8))
     }
 
     private func drawRows() {
         (0..<editorConfig.screenRows).forEach { _ in
-            print("~\r")
+            print("~\r\n")
         }
     }
 
