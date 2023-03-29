@@ -41,8 +41,8 @@ public class SwiftKilo {
             refreshScreen()
 
             if process(scalar) {
-                print("\u{1b}[2J")
-                print("\u{1b}[H")
+                fileHandle.print("\u{1b}[2J")
+                fileHandle.print("\u{1b}[H")
 
                 break
             }
@@ -59,17 +59,17 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func refreshScreen() {
-        print("\u{1b}[2J")
-        print("\u{1b}[H")
+        fileHandle.print("\u{1b}[2J")
+        fileHandle.print("\u{1b}[H")
 
         drawRows()
 
-        try? fileHandle.write(contentsOf: Array("\u{1b}[H".utf8))
+        fileHandle.print("\u{1b}[H")
     }
 
     private func drawRows() {
         (0..<editorConfig.screenRows).forEach { _ in
-            print("~\r\n")
+            fileHandle.print("~\r\n")
         }
     }
 
@@ -97,6 +97,12 @@ public class SwiftKilo {
 
     private func disableRawMode() {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &editorConfig.origTermios)
+    }
+}
+
+extension FileHandle {
+    func print(_ contents: String) {
+        try! write(contentsOf: Array(contents.utf8))
     }
 }
 
