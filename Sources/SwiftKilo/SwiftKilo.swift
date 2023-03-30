@@ -1,7 +1,5 @@
 import Foundation
 
-// TODO: printではなくfileHandle.fileDescriptor.writeを使う
-
 @main
 public class SwiftKilo {
     struct EditorConfig {
@@ -76,11 +74,12 @@ public class SwiftKilo {
     private func getWindowSize() -> (height: Int, width: Int)? {
         var windowSize = winsize()
 
-        guard ioctl(fileHandle.fileDescriptor, TIOCGWINSZ, &windowSize) != -1 else {
+        if true || ioctl(fileHandle.fileDescriptor, TIOCGWINSZ, &windowSize) != -1 {
+            fileHandle.print("\u{1b}[999C\u{1b}[999B")
             return nil
+        } else {
+            return (height: Int(windowSize.ws_row), width: Int(windowSize.ws_col))
         }
-
-        return (height: Int(windowSize.ws_row), width: Int(windowSize.ws_col))
     }
 
     private func enableRawMode() {
