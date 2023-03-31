@@ -74,12 +74,9 @@ public class SwiftKilo {
     private func getWindowSize() -> (height: Int, width: Int)? {
         var windowSize = winsize()
 
-        if true || ioctl(fileHandle.fileDescriptor, TIOCGWINSZ, &windowSize) != -1 {
-            fileHandle.print("\u{1b}[999C\u{1b}[999B")
-            return nil
-        } else {
-            return (height: Int(windowSize.ws_row), width: Int(windowSize.ws_col))
-        }
+        guard ioctl(fileHandle.fileDescriptor, TIOCGWINSZ, &windowSize) != -1 else { return nil }
+
+        return (height: Int(windowSize.ws_row), width: Int(windowSize.ws_col))
     }
 
     private func enableRawMode() {
