@@ -66,9 +66,7 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        (0..<editorConfig.screenRows).forEach { _ in
-            fileHandle.print("~\r\n")
-        }
+        fileHandle.print(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\r\n"))
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
