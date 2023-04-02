@@ -14,6 +14,7 @@ public class SwiftKilo {
 
     private let fileHandle: FileHandle
     private var editorConfig: EditorConfig!
+    private var buffer = ""
 
     init?(fileHandle: FileHandle = .standardInput) {
         self.fileHandle = fileHandle
@@ -57,16 +58,20 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func refreshScreen() {
-        fileHandle.print("\u{1b}[2J")
-        fileHandle.print("\u{1b}[H")
+        buffer = ""
+
+        buffer.append("\u{1b}[2J")
+        buffer.append("\u{1b}[H")
 
         drawRows()
 
-        fileHandle.print("\u{1b}[H")
+        buffer.append("\u{1b}[H")
+
+        fileHandle.print(buffer)
     }
 
     private func drawRows() {
-        fileHandle.print(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\r\n"))
+        buffer.append(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\r\n"))
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
