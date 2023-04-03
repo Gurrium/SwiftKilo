@@ -60,12 +60,14 @@ public class SwiftKilo {
     private func refreshScreen() {
         buffer = ""
 
+        buffer.append("\u{1b}[?25l")
         buffer.append("\u{1b}[2J")
         buffer.append("\u{1b}[H")
 
         drawRows()
 
         buffer.append("\u{1b}[H")
+        buffer.append("\u{1b}[?25h")
 
         fileHandle.print(buffer)
     }
