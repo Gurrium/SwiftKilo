@@ -61,7 +61,6 @@ public class SwiftKilo {
         buffer = ""
 
         buffer.append("\u{1b}[?25l")
-        buffer.append("\u{1b}[2J")
         buffer.append("\u{1b}[H")
 
         drawRows()
@@ -73,7 +72,7 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        buffer.append(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\r\n"))
+        buffer.append(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\u{1b}[K\r\n"))
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
