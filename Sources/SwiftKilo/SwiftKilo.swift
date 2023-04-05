@@ -1,5 +1,7 @@
 import Foundation
 
+let versionString = "0.1"
+
 @main
 public class SwiftKilo {
     struct EditorConfig {
@@ -72,7 +74,26 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        buffer.append(Array(repeating: "~", count: editorConfig.screenRows).joined(separator: "\u{1b}[K\r\n"))
+        for i in (0..<(editorConfig.screenRows - 1)) {
+            if i == editorConfig.screenRows / 3 {
+                var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
+
+                var padding = (editorConfig.screenCols - message.count) / 2
+                if padding > 0 {
+                    buffer.append("~")
+                    padding -= 1
+                }
+
+                message = "\(Array(repeating: " ", count: padding).joined())\(message)"
+
+                buffer.append(message)
+            } else {
+                buffer.append(("~"))
+            }
+
+            buffer.append("\u{1b}[K\r\n")
+        }
+        buffer.append("~")
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
