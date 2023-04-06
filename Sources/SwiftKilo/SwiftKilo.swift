@@ -4,10 +4,36 @@ let versionString = "0.1"
 
 @main
 public class SwiftKilo {
+    struct CursorPosition {
+        var x: Int
+        var y: Int
+
+        enum Direction {
+            case up
+            case down
+            case left
+            case right
+        }
+
+        mutating func move(_ direction: Direction) {
+            switch direction {
+            case .up:
+                y -= 1
+            case .down:
+                y += 1
+            case .left:
+                x -= 1
+            case .right:
+                x += 1
+            }
+        }
+    }
+
     struct EditorConfig {
-        var origTermios: termios
+        var cursorPosition: CursorPosition
         var screenRows: Int
         var screenCols: Int
+        var origTermios: termios
     }
 
     public static func main() async throws {
@@ -24,9 +50,10 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            origTermios: .init(),
+            cursorPosition: CursorPosition(x: 0, y: 0),
             screenRows: height,
-            screenCols: width
+            screenCols: width,
+            origTermios: .init()
         )
     }
 
@@ -54,7 +81,24 @@ public class SwiftKilo {
 
     // TODO: そのうち分岐が増えたらenumを返すようにする
     private func process(_ scalar: UnicodeScalar) -> Bool {
-        return scalar.isControlKeyEquivalent(to: "q")
+        if scalar.isControlKeyEquivalent(to: "q") {
+            return true
+        }
+
+        switch scalar {
+        case "h":
+            editorConfig.cursorPosition.move(.left)
+        case "j":
+            editorConfig.cursorPosition.move(.down)
+        case "k":
+            editorConfig.cursorPosition.move(.up)
+        case "l":
+            editorConfig.cursorPosition.move(.right)
+        default:
+            break
+        }
+
+        return false
     }
 
     // MARK: rendering
@@ -67,7 +111,8 @@ public class SwiftKilo {
 
         drawRows()
 
-        buffer.append("\u{1b}[H")
+        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y + 1);\(editorConfig.cursorPosition.x + 1)H")
+
         buffer.append("\u{1b}[?25h")
 
         fileHandle.print(buffer)
