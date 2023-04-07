@@ -1,6 +1,28 @@
 import Foundation
+import AsyncAlgorithms
 
 let versionString = "0.1"
+
+struct Interval<Value>: AsyncSequence {
+    typealias AsyncIterator = Iterator
+    typealias Element = Value
+
+    let value: Value
+
+    func makeAsyncIterator() -> Iterator {
+        Iterator(value: value)
+    }
+
+    struct Iterator: AsyncIteratorProtocol {
+        let value: Value
+
+        func next() async throws -> Element? {
+            try await Task.sleep(nanoseconds: 10_000_000)
+
+            return value
+        }
+    }
+}
 
 @main
 public class SwiftKilo {
@@ -64,11 +86,11 @@ public class SwiftKilo {
     private func main() async throws {
         enableRawMode()
 
-        // TODO: 一定間隔でUnicodeScalar?を返すAsyncSequenceにする
-        for try await scalar in fileHandle.bytes.unicodeScalars {
+        for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
 
-            if process(scalar) {
+            if let scalar,
+               process(scalar) {
                 fileHandle.print("\u{1b}[2J")
                 fileHandle.print("\u{1b}[H")
 
