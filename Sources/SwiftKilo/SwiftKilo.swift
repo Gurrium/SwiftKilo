@@ -27,6 +27,9 @@ struct Interval<Value>: AsyncSequence {
 @main
 public class SwiftKilo {
     struct CursorPosition {
+        let maxX: Int
+        let maxY: Int
+
         var x: Int
         var y: Int
 
@@ -40,13 +43,13 @@ public class SwiftKilo {
         mutating func move(_ direction: Direction) {
             switch direction {
             case .up:
-                y -= 1
+                y = max(0, y - 1)
             case .down:
-                y += 1
+                y = min(maxY, y + 1)
             case .left:
-                x -= 1
+                x = max(0, x - 1)
             case .right:
-                x += 1
+                x = min(maxX, x + 1)
             }
         }
     }
@@ -72,7 +75,7 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            cursorPosition: CursorPosition(x: 0, y: 0),
+            cursorPosition: CursorPosition(maxX: width - 1, maxY: height - 1, x: 0, y: 0),
             screenRows: height,
             screenCols: width,
             origTermios: .init()
