@@ -104,10 +104,22 @@ public class SwiftKilo {
 
     // MARK: key processing
 
+
+
     // TODO: そのうち分岐が増えたらenumを返すようにする
     private func process(_ scalar: UnicodeScalar) -> Bool {
         if scalar.isControlKeyEquivalent(to: "q") {
             return true
+        }
+
+        if scalar.isControlKeyEquivalent(to: "b") {
+            for _ in 0..<editorConfig.screenRows {
+                editorConfig.cursorPosition.move(.up)
+            }
+        } else if scalar.isControlKeyEquivalent(to: "f") {
+            for _ in 0..<editorConfig.screenRows {
+                editorConfig.cursorPosition.move(.down)
+            }
         }
 
         switch scalar {
