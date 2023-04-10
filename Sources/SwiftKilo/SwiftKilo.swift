@@ -68,6 +68,7 @@ public class SwiftKilo {
     private let fileHandle: FileHandle
     private var editorConfig: EditorConfig!
     private var buffer = ""
+    private var keyProcessor = KeyProcessor()
 
     init?(fileHandle: FileHandle = .standardInput) {
         self.fileHandle = fileHandle
@@ -93,49 +94,32 @@ public class SwiftKilo {
             refreshScreen()
 
             if let scalar,
-               process(scalar) {
-                fileHandle.print("\u{1b}[2J")
-                fileHandle.print("\u{1b}[H")
+               let action = keyProcessor.process(scalar) {
+                switch action {
+                case .moveCursorUp:
+                    editorConfig.cursorPosition.move(.up)
+                case .moveCursorLeft:
+                    editorConfig.cursorPosition.move(.left)
+                case .moveCursorRight:
+                    editorConfig.cursorPosition.move(.right)
+                case .moveCursorDown:
+                    editorConfig.cursorPosition.move(.down)
+                case .moveCursorToTopOfScreen:
+                    for _ in 0..<editorConfig.screenRows {
+                        editorConfig.cursorPosition.move(.up)
+                    }
+                case .moveCursorToBottomOfScreen:
+                    for _ in 0..<editorConfig.screenRows {
+                        editorConfig.cursorPosition.move(.down)
+                    }
+                case .terminate:
+                    fileHandle.print("\u{1b}[2J")
+                    fileHandle.print("\u{1b}[H")
 
-                break
+                    break
+                }
             }
         }
-    }
-
-    // MARK: key processing
-
-
-
-    // TODO: そのうち分岐が増えたらenumを返すようにする
-    private func process(_ scalar: UnicodeScalar) -> Bool {
-        if scalar.isControlKeyEquivalent(to: "q") {
-            return true
-        }
-
-        if scalar.isControlKeyEquivalent(to: "b") {
-            for _ in 0..<editorConfig.screenRows {
-                editorConfig.cursorPosition.move(.up)
-            }
-        } else if scalar.isControlKeyEquivalent(to: "f") {
-            for _ in 0..<editorConfig.screenRows {
-                editorConfig.cursorPosition.move(.down)
-            }
-        }
-
-        switch scalar {
-        case "h":
-            editorConfig.cursorPosition.move(.left)
-        case "j":
-            editorConfig.cursorPosition.move(.down)
-        case "k":
-            editorConfig.cursorPosition.move(.up)
-        case "l":
-            editorConfig.cursorPosition.move(.right)
-        default:
-            break
-        }
-
-        return false
     }
 
     // MARK: rendering
@@ -216,4 +200,71 @@ extension UnicodeScalar {
 
         return self.value == UInt32(asciiValue & 0b00011111)
     }
+
+    func modified(with modifierKeys: Modifier...) -> UnicodeScalar? {
+        guard isASCII else { return nil }
+
+        let modified = modifierKeys.reduce(value) { partialResult, modifier in value & modifier.mask }
+
+        return UnicodeScalar(modified)
+    }
+
+    enum Modifier {
+        case control
+
+        var mask: UInt32 {
+            switch self {
+            case .control:
+                return 0b0001_1111
+            }
+        }
+    }
+}
+
+// テストを書く
+final class KeyProcessor {
+    private var state = [UnicodeScalar]()
+
+    func process(_ scalar: UnicodeScalar) -> EditorAction? {
+        var action: EditorAction?
+
+        state.append(scalar)
+
+        switch state {
+        case [("q" as UnicodeScalar).modified(with: .control)]:
+            action = .terminate
+        case [("b" as UnicodeScalar).modified(with: .control)]:
+            action = .moveCursorToTopOfScreen
+        case [("f" as UnicodeScalar).modified(with: .control)]:
+            action = .moveCursorToBottomOfScreen
+        case ["h"]:
+            action = .moveCursorLeft
+        case ["j"]:
+            action = .moveCursorDown
+        case ["k"]:
+            action = .moveCursorUp
+        case ["l"]:
+            action = .moveCursorRight
+        default:
+            action = nil
+        }
+
+        if action != nil {
+            state = []
+        }
+
+        return action
+    }
+}
+
+enum EditorAction {
+    // cursor
+    case moveCursorUp
+    case moveCursorLeft
+    case moveCursorRight
+    case moveCursorDown
+    case moveCursorToTopOfScreen
+    case moveCursorToBottomOfScreen
+
+    case terminate
 }
