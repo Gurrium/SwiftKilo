@@ -116,7 +116,7 @@ public class SwiftKilo {
                     fileHandle.print("\u{1b}[2J")
                     fileHandle.print("\u{1b}[H")
 
-                    break
+                    return
                 }
             }
         }
