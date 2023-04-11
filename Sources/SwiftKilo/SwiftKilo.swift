@@ -221,42 +221,6 @@ extension UnicodeScalar {
     }
 }
 
-// テストを書く
-final class KeyProcessor {
-    private var state = [UnicodeScalar]()
-
-    func process(_ scalar: UnicodeScalar) -> EditorAction? {
-        var action: EditorAction?
-
-        state.append(scalar)
-
-        switch state {
-        case [("q" as UnicodeScalar).modified(with: .control)]:
-            action = .terminate
-        case [("b" as UnicodeScalar).modified(with: .control)]:
-            action = .moveCursorToTopOfScreen
-        case [("f" as UnicodeScalar).modified(with: .control)]:
-            action = .moveCursorToBottomOfScreen
-        case ["h"]:
-            action = .moveCursorLeft
-        case ["j"]:
-            action = .moveCursorDown
-        case ["k"]:
-            action = .moveCursorUp
-        case ["l"]:
-            action = .moveCursorRight
-        default:
-            action = nil
-        }
-
-        if action != nil {
-            state = []
-        }
-
-        return action
-    }
-}
-
 enum EditorAction {
     // cursor
     case moveCursorUp
