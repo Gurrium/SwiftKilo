@@ -112,7 +112,7 @@ public class SwiftKilo {
                     for _ in 0..<editorConfig.screenRows {
                         editorConfig.cursorPosition.move(.down)
                     }
-                case .terminate:
+                case .quit:
                     fileHandle.print("\u{1b}[2J")
                     fileHandle.print("\u{1b}[H")
 
@@ -266,5 +266,5 @@ enum EditorAction {
     case moveCursorToTopOfScreen
     case moveCursorToBottomOfScreen
 
-    case terminate
+    case quit
 }
