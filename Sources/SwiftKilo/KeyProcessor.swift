@@ -17,12 +17,12 @@ final class KeyProcessor {
         state.append(scalar)
 
         switch state {
-        case [("q" as UnicodeScalar).modified(with: .control)]:
+        case [.init("q").modified(with: .control)]:
             action = .quit
-        case [("b" as UnicodeScalar).modified(with: .control)]:
-            action = .moveCursorToTopOfScreen
-        case [("f" as UnicodeScalar).modified(with: .control)]:
-            action = .moveCursorToBottomOfScreen
+        case [.init("b").modified(with: .control)]:
+            action = .movePageUp
+        case [.init("f").modified(with: .control)]:
+            action = .movePageDown
         case ["h"]:
             action = .moveCursorLeft
         case ["j"]:

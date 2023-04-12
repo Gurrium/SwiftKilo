@@ -15,31 +15,45 @@ final class KeyProcessorTests: XCTestCase {
         keyProcessor = KeyProcessor()
     }
 
+    // MARK: cursor
+
     func test_moveCursorUp() {
-        XCTAssertEqual(keyProcessor.process("k" as UnicodeScalar), .moveCursorUp)
+        XCTAssertEqual(keyProcessor.process(.init("k")), .moveCursorUp)
     }
 
     func test_moveCursorLeft() {
-        XCTAssertEqual(keyProcessor.process("h" as UnicodeScalar), .moveCursorLeft)
+        XCTAssertEqual(keyProcessor.process(.init("h")), .moveCursorLeft)
     }
 
     func test_moveCursorRight() {
-        XCTAssertEqual(keyProcessor.process("l" as UnicodeScalar), .moveCursorRight)
+        XCTAssertEqual(keyProcessor.process(.init("l")), .moveCursorRight)
     }
 
     func test_moveCursorDown() {
-        XCTAssertEqual(keyProcessor.process("j" as UnicodeScalar), .moveCursorDown)
+        XCTAssertEqual(keyProcessor.process(.init("j")), .moveCursorDown)
     }
 
     func test_moveCursorToTopOfScreen() {
-        XCTAssertEqual(keyProcessor.process(("b" as UnicodeScalar).modified(with: .control)!), .moveCursorToTopOfScreen)
+        XCTAssertEqual(keyProcessor.process(.init("H")), .moveCursorToEndOfLine)
     }
 
     func test_moveCursorToBottomOfScreen() {
-        XCTAssertEqual(keyProcessor.process(("f" as UnicodeScalar).modified(with: .control)!), .moveCursorToBottomOfScreen)
+        XCTAssertEqual(keyProcessor.process(.init("L")), .moveCursorToEndOfLine)
     }
 
+    // MARK: page
+
+    func test_movePageUp() {
+        XCTAssertEqual(keyProcessor.process(.init("b").modified(with: .control)), .movePageUp)
+    }
+
+    func test_movePageDown() {
+        XCTAssertEqual(keyProcessor.process(.init("f").modified(with: .control)), .movePageDown)
+    }
+
+    // MARK: editor
+
     func test_quit() {
-        XCTAssertEqual(keyProcessor.process(("q" as UnicodeScalar).modified(with: .control)!), .quit)
+        XCTAssertEqual(keyProcessor.process(.init("q").modified(with: .control)), .quit)
     }
 }

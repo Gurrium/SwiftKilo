@@ -30,8 +30,8 @@ public class SwiftKilo {
         let maxX: Int
         let maxY: Int
 
-        var x: Int
-        var y: Int
+        private(set) var x: Int
+        private(set) var y: Int
 
         enum Direction {
             case up
@@ -104,11 +104,19 @@ public class SwiftKilo {
                     editorConfig.cursorPosition.move(.right)
                 case .moveCursorDown:
                     editorConfig.cursorPosition.move(.down)
-                case .moveCursorToTopOfScreen:
+                case .moveCursorToBeginningOfLine:
+                    for _ in 0..<editorConfig.screenCols {
+                        editorConfig.cursorPosition.move(.left)
+                    }
+                case .moveCursorToEndOfLine:
+                    for _ in 0..<editorConfig.screenCols {
+                        editorConfig.cursorPosition.move(.right)
+                    }
+                case .movePageUp:
                     for _ in 0..<editorConfig.screenRows {
                         editorConfig.cursorPosition.move(.up)
                     }
-                case .moveCursorToBottomOfScreen:
+                case .movePageDown:
                     for _ in 0..<editorConfig.screenRows {
                         editorConfig.cursorPosition.move(.down)
                     }
@@ -201,12 +209,12 @@ extension UnicodeScalar {
         return self.value == UInt32(asciiValue & 0b00011111)
     }
 
-    func modified(with modifierKeys: Modifier...) -> UnicodeScalar? {
-        guard isASCII else { return nil }
+    func modified(with modifierKeys: Modifier...) -> UnicodeScalar {
+        guard isASCII else { preconditionFailure("self(\(self)) must be ASCII") }
 
         let modified = modifierKeys.reduce(value) { partialResult, modifier in value & modifier.mask }
 
-        return UnicodeScalar(modified)
+        return UnicodeScalar(modified)!
     }
 
     enum Modifier {
@@ -222,13 +230,18 @@ extension UnicodeScalar {
 }
 
 enum EditorAction {
-    // cursor
+    // MARK: cursor
     case moveCursorUp
     case moveCursorLeft
     case moveCursorRight
     case moveCursorDown
-    case moveCursorToTopOfScreen
-    case moveCursorToBottomOfScreen
+    case moveCursorToEndOfLine
+    case moveCursorToBeginningOfLine
 
+    // MARK: page
+    case movePageUp
+    case movePageDown
+
+    // MARK: editor
     case quit
 }
