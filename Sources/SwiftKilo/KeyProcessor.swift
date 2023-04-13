@@ -31,6 +31,10 @@ final class KeyProcessor {
             action = .moveCursorUp
         case ["l"]:
             action = .moveCursorRight
+        case ["H"]:
+            action = .moveCursorToBeginningOfLine
+        case ["L"]:
+            action = .moveCursorToEndOfLine
         default:
             action = nil
         }
