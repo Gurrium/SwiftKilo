@@ -33,11 +33,11 @@ final class KeyProcessorTests: XCTestCase {
         XCTAssertEqual(keyProcessor.process(.init("j")), .moveCursorDown)
     }
 
-    func test_moveCursorToTopOfScreen() {
-        XCTAssertEqual(keyProcessor.process(.init("H")), .moveCursorToEndOfLine)
+    func test_moveCursorToBeginningOfLine() {
+        XCTAssertEqual(keyProcessor.process(.init("H")), .moveCursorToBeginningOfLine)
     }
 
-    func test_moveCursorToBottomOfScreen() {
+    func test_moveCursorToEndOfLine() {
         XCTAssertEqual(keyProcessor.process(.init("L")), .moveCursorToEndOfLine)
     }
 
