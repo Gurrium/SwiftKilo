@@ -51,6 +51,13 @@ final class KeyProcessorTests: XCTestCase {
         XCTAssertEqual(keyProcessor.process(.init("f").modified(with: .control)), .movePageDown)
     }
 
+    // MARK: text
+
+    func test_delete() {
+        "\u{1b}[3".unicodeScalars.forEach { XCTAssertNil(keyProcessor.process($0)) }
+        XCTAssertEqual(keyProcessor.process(.init("~")), .delete)
+    }
+
     // MARK: editor
 
     func test_quit() {

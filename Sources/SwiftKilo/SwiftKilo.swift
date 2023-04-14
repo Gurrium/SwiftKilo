@@ -96,6 +96,7 @@ public class SwiftKilo {
             if let scalar,
                let action = keyProcessor.process(scalar) {
                 switch action {
+                // cursor
                 case .moveCursorUp:
                     editorConfig.cursorPosition.move(.up)
                 case .moveCursorLeft:
@@ -112,6 +113,7 @@ public class SwiftKilo {
                     for _ in 0..<editorConfig.screenCols {
                         editorConfig.cursorPosition.move(.right)
                     }
+                // page
                 case .movePageUp:
                     for _ in 0..<editorConfig.screenRows {
                         editorConfig.cursorPosition.move(.up)
@@ -120,6 +122,10 @@ public class SwiftKilo {
                     for _ in 0..<editorConfig.screenRows {
                         editorConfig.cursorPosition.move(.down)
                     }
+                // text
+                case .delete:
+                    // TODO: impl
+                    break
                 case .quit:
                     fileHandle.print("\u{1b}[2J")
                     fileHandle.print("\u{1b}[H")
@@ -241,6 +247,9 @@ enum EditorAction {
     // MARK: page
     case movePageUp
     case movePageDown
+
+    // MARK: text
+    case delete
 
     // MARK: editor
     case quit
