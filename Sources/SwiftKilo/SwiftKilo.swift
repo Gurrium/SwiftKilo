@@ -59,6 +59,7 @@ public class SwiftKilo {
         var screenRows: Int
         var screenCols: Int
         var origTermios: termios
+        var rows: [String]
     }
 
     public static func main() async throws {
@@ -79,7 +80,8 @@ public class SwiftKilo {
             cursorPosition: CursorPosition(maxX: width - 1, maxY: height - 1, x: 0, y: 0),
             screenRows: height,
             screenCols: width,
-            origTermios: .init()
+            origTermios: .init(),
+            rows: []
         )
     }
 
@@ -89,6 +91,7 @@ public class SwiftKilo {
 
     private func main() async throws {
         enableRawMode()
+        openEditor()
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
@@ -136,6 +139,12 @@ public class SwiftKilo {
         }
     }
 
+    // MARK: file i/o
+
+    private func openEditor() {
+        editorConfig.rows = ["Hello, world!"]
+    }
+
     // MARK: rendering
 
     private func refreshScreen() {
@@ -154,21 +163,25 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        for i in (0..<(editorConfig.screenRows - 1)) {
-            if i == editorConfig.screenRows / 3 {
-                var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
+        for y in (0..<(editorConfig.screenRows - 1)) {
+            if (y >= editorConfig.rows.count) {
+                if y == editorConfig.screenRows / 3 {
+                    var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
 
-                var padding = (editorConfig.screenCols - message.count) / 2
-                if padding > 0 {
-                    buffer.append("~")
-                    padding -= 1
+                    var padding = (editorConfig.screenCols - message.count) / 2
+                    if padding > 0 {
+                        buffer.append("~")
+                        padding -= 1
+                    }
+
+                    message = "\(Array(repeating: " ", count: padding).joined())\(message)"
+
+                    buffer.append(message)
+                } else {
+                    buffer.append(("~"))
                 }
-
-                message = "\(Array(repeating: " ", count: padding).joined())\(message)"
-
-                buffer.append(message)
             } else {
-                buffer.append(("~"))
+                buffer.append(String(editorConfig.rows[y].prefix(editorConfig.screenCols)))
             }
 
             buffer.append("\u{1b}[K\r\n")
