@@ -1,5 +1,6 @@
 import Foundation
 import AsyncAlgorithms
+import System
 
 let versionString = "0.1"
 
@@ -91,7 +92,9 @@ public class SwiftKilo {
 
     private func main() async throws {
         enableRawMode()
-        openEditor()
+
+        let args = CommandLine.arguments
+        try openEditor(filePath: args.count > 1 ? args[1] : nil)
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
@@ -141,8 +144,17 @@ public class SwiftKilo {
 
     // MARK: file i/o
 
-    private func openEditor() {
-        editorConfig.rows = ["Hello, world!"]
+    private func openEditor(filePath: String?) throws {
+        let rows: [String]
+        if let filePath,
+           let data = FileManager.default.contents(atPath: filePath),
+           let contents = String(data: data, encoding: .utf8) {
+            rows = contents.split(whereSeparator: \.isNewline).map { String($0) }
+        } else {
+            rows = [""]
+        }
+
+        editorConfig.rows = rows
     }
 
     // MARK: rendering
@@ -165,7 +177,7 @@ public class SwiftKilo {
     private func drawRows() {
         for y in (0..<(editorConfig.screenRows - 1)) {
             if (y >= editorConfig.rows.count) {
-                if y == editorConfig.screenRows / 3 {
+                if editorConfig.rows.count == 0 && y == editorConfig.screenRows / 3 {
                     var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
 
                     var padding = (editorConfig.screenCols - message.count) / 2
