@@ -61,6 +61,7 @@ public class SwiftKilo {
         var screenCols: Int
         var origTermios: termios
         var rows: [String]
+        var rowOffset: Int
     }
 
     public static func main() async throws {
@@ -82,7 +83,8 @@ public class SwiftKilo {
             screenRows: height,
             screenCols: width,
             origTermios: .init(),
-            rows: []
+            rows: [],
+            rowOffset: 0
         )
     }
 
@@ -151,7 +153,7 @@ public class SwiftKilo {
            let contents = String(data: data, encoding: .utf8) {
             rows = contents.split(whereSeparator: \.isNewline).map { String($0) }
         } else {
-            rows = [""]
+            rows = []
         }
 
         editorConfig.rows = rows
@@ -176,7 +178,9 @@ public class SwiftKilo {
 
     private func drawRows() {
         for y in (0..<(editorConfig.screenRows - 1)) {
-            if (y >= editorConfig.rows.count) {
+            let fileRow = y + editorConfig.rowOffset
+
+            if (fileRow >= editorConfig.rows.count) {
                 if editorConfig.rows.count == 0 && y == editorConfig.screenRows / 3 {
                     var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
 
@@ -193,7 +197,7 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.rows[y].prefix(editorConfig.screenCols)))
+                buffer.append(String(editorConfig.rows[fileRow].prefix(editorConfig.screenCols)))
             }
 
             buffer.append("\u{1b}[K\r\n")
