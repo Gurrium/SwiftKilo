@@ -28,9 +28,6 @@ struct Interval<Value>: AsyncSequence {
 @main
 public class SwiftKilo {
     struct CursorPosition {
-        let maxX: Int
-        let maxY: Int
-
         private(set) var x: Int
         private(set) var y: Int
 
@@ -41,16 +38,16 @@ public class SwiftKilo {
             case right
         }
 
-        mutating func move(_ direction: Direction) {
+        mutating func move(_ direction: Direction, limit: Int) {
             switch direction {
             case .up:
-                y = max(0, y - 1)
+                y = max(limit, y - 1)
             case .down:
-                y = min(maxY, y + 1)
+                y = min(limit, y + 1)
             case .left:
-                x = max(0, x - 1)
+                x = max(limit, x - 1)
             case .right:
-                x = min(maxX, x + 1)
+                x = min(limit, x + 1)
             }
         }
     }
@@ -79,7 +76,7 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            cursorPosition: CursorPosition(maxX: width - 1, maxY: height - 1, x: 0, y: 0),
+            cursorPosition: CursorPosition(x: 0, y: 0),
             screenRows: height,
             screenCols: width,
             origTermios: .init(),
@@ -106,29 +103,29 @@ public class SwiftKilo {
                 switch action {
                 // cursor
                 case .moveCursorUp:
-                    editorConfig.cursorPosition.move(.up)
+                    editorConfig.cursorPosition.move(.up, limit: 0)
                 case .moveCursorLeft:
-                    editorConfig.cursorPosition.move(.left)
+                    editorConfig.cursorPosition.move(.left, limit: 0)
                 case .moveCursorRight:
-                    editorConfig.cursorPosition.move(.right)
+                    editorConfig.cursorPosition.move(.right, limit: editorConfig.screenCols)
                 case .moveCursorDown:
-                    editorConfig.cursorPosition.move(.down)
+                    editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
                 case .moveCursorToBeginningOfLine:
                     for _ in 0..<editorConfig.screenCols {
-                        editorConfig.cursorPosition.move(.left)
+                        editorConfig.cursorPosition.move(.left, limit: 0)
                     }
                 case .moveCursorToEndOfLine:
                     for _ in 0..<editorConfig.screenCols {
-                        editorConfig.cursorPosition.move(.right)
+                        editorConfig.cursorPosition.move(.right, limit: editorConfig.screenCols)
                     }
                 // page
                 case .movePageUp:
                     for _ in 0..<editorConfig.screenRows {
-                        editorConfig.cursorPosition.move(.up)
+                        editorConfig.cursorPosition.move(.up, limit: 0)
                     }
                 case .movePageDown:
                     for _ in 0..<editorConfig.screenRows {
-                        editorConfig.cursorPosition.move(.down)
+                        editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
                     }
                 // text
                 case .delete:
@@ -160,8 +157,19 @@ public class SwiftKilo {
     }
 
     // MARK: rendering
+    private func scroll() {
+        if editorConfig.cursorPosition.y < editorConfig.rowOffset {
+            editorConfig.rowOffset = editorConfig.cursorPosition.y
+        }
+
+        if editorConfig.cursorPosition.y >= editorConfig.rowOffset + editorConfig.screenRows {
+            editorConfig.rowOffset = editorConfig.cursorPosition.y - editorConfig.screenRows + 1
+        }
+    }
 
     private func refreshScreen() {
+        scroll()
+
         buffer = ""
 
         buffer.append("\u{1b}[?25l")
@@ -169,7 +177,7 @@ public class SwiftKilo {
 
         drawRows()
 
-        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y + 1);\(editorConfig.cursorPosition.x + 1)H")
+        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y - editorConfig.rowOffset + 1);\(editorConfig.cursorPosition.x + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
@@ -177,7 +185,7 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        for y in (0..<(editorConfig.screenRows - 1)) {
+        for y in (0..<editorConfig.screenRows) {
             let fileRow = y + editorConfig.rowOffset
 
             if (fileRow >= editorConfig.rows.count) {
@@ -200,9 +208,11 @@ public class SwiftKilo {
                 buffer.append(String(editorConfig.rows[fileRow].prefix(editorConfig.screenCols)))
             }
 
-            buffer.append("\u{1b}[K\r\n")
+            buffer.append("\u{1b}[K")
+            if y < editorConfig.screenRows - 1 {
+                buffer.append("\r\n")
+            }
         }
-        buffer.append("~")
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
