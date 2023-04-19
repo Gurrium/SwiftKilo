@@ -59,6 +59,7 @@ public class SwiftKilo {
         var origTermios: termios
         var rows: [String]
         var rowOffset: Int
+        var columnOffset: Int
     }
 
     public static func main() async throws {
@@ -81,7 +82,8 @@ public class SwiftKilo {
             screenCols: width,
             origTermios: .init(),
             rows: [],
-            rowOffset: 0
+            rowOffset: 0,
+            columnOffset: 0
         )
     }
 
