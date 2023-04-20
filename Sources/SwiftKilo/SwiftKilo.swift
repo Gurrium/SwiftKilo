@@ -207,7 +207,7 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.rows[fileRow].prefix(editorConfig.screenCols)))
+                buffer.append(String(editorConfig.rows[fileRow].dropFirst(editorConfig.columnOffset).prefix(editorConfig.screenCols)))
             }
 
             buffer.append("\u{1b}[K")
