@@ -109,7 +109,7 @@ public class SwiftKilo {
                 case .moveCursorLeft:
                     editorConfig.cursorPosition.move(.left, limit: 0)
                 case .moveCursorRight:
-                    editorConfig.cursorPosition.move(.right, limit: editorConfig.screenCols)
+                    editorConfig.cursorPosition.move(.right, limit: .max)
                 case .moveCursorDown:
                     editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
                 case .moveCursorToBeginningOfLine:
@@ -159,6 +159,7 @@ public class SwiftKilo {
     }
 
     // MARK: rendering
+
     private func scroll() {
         if editorConfig.cursorPosition.y < editorConfig.rowOffset {
             editorConfig.rowOffset = editorConfig.cursorPosition.y
@@ -166,6 +167,14 @@ public class SwiftKilo {
 
         if editorConfig.cursorPosition.y >= editorConfig.rowOffset + editorConfig.screenRows {
             editorConfig.rowOffset = editorConfig.cursorPosition.y - editorConfig.screenRows + 1
+        }
+
+        if editorConfig.cursorPosition.x < editorConfig.columnOffset {
+            editorConfig.columnOffset = editorConfig.cursorPosition.x
+        }
+
+        if editorConfig.cursorPosition.x >= editorConfig.columnOffset + editorConfig.screenCols {
+            editorConfig.columnOffset = editorConfig.cursorPosition.x - editorConfig.screenCols + 1
         }
     }
 
