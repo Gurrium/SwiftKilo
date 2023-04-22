@@ -188,7 +188,7 @@ public class SwiftKilo {
 
         drawRows()
 
-        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y - editorConfig.rowOffset + 1);\(editorConfig.cursorPosition.x + 1)H")
+        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y - editorConfig.rowOffset + 1);\((editorConfig.cursorPosition.x - editorConfig.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
