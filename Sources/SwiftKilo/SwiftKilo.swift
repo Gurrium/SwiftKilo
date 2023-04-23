@@ -109,7 +109,7 @@ public class SwiftKilo {
                 case .moveCursorLeft:
                     editorConfig.cursorPosition.move(.left, limit: 0)
                 case .moveCursorRight:
-                    editorConfig.cursorPosition.move(.right, limit: .max)
+                    editorConfig.cursorPosition.move(.right, limit: editorConfig.rows[editorConfig.cursorPosition.y].count)
                 case .moveCursorDown:
                     editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
                 case .moveCursorToBeginningOfLine:
