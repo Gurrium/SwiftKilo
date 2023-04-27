@@ -117,6 +117,7 @@ public class SwiftKilo {
                         editorConfig.cursorPosition.move(.left, limit: 0)
                     }
                 case .moveCursorToEndOfLine:
+                    // FIXME: 多分その行の文字列を無視して画面端に行く
                     for _ in 0..<editorConfig.screenCols {
                         editorConfig.cursorPosition.move(.right, limit: editorConfig.screenCols)
                     }
@@ -138,6 +139,17 @@ public class SwiftKilo {
                     fileHandle.print("\u{1b}[H")
 
                     return
+                }
+
+                let currentRowLength: Int
+                if editorConfig.cursorPosition.y >= editorConfig.rows.count {
+                    currentRowLength = editorConfig.rows[editorConfig.cursorPosition.y].count
+                } else {
+                    currentRowLength = 0
+                }
+                if editorConfig.cursorPosition.x > currentRowLength {
+                    // TODO: 今の仕組みだとうまくいかないので直す
+                    editorConfig.cursorPosition.x = currentRowLength
                 }
             }
         }
