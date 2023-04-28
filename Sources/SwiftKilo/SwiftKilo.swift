@@ -27,9 +27,9 @@ struct Interval<Value>: AsyncSequence {
 
 @main
 public class SwiftKilo {
-    struct CursorPosition {
-        private(set) var x: Int
-        private(set) var y: Int
+    struct Cursor {
+        var x: Int
+        var y: Int
 
         enum Direction {
             case up
@@ -38,28 +38,42 @@ public class SwiftKilo {
             case right
         }
 
-        mutating func move(_ direction: Direction, limit: Int) {
+        mutating func move(_ direction: Direction, distance: Int) {
             switch direction {
             case .up:
-                y = max(limit, y - 1)
+                y = y - distance
             case .down:
-                y = min(limit, y + 1)
+                y = y + distance
             case .left:
-                x = max(limit, x - 1)
+                x = x - distance
             case .right:
-                x = min(limit, x + 1)
+                x = x + distance
             }
         }
     }
 
-    struct EditorConfig {
-        var cursorPosition: CursorPosition
-        var screenRows: Int
-        var screenCols: Int
-        var origTermios: termios
+    struct File {
         var rows: [String]
+        var cursor: Cursor
+
+        var currentRow: String {
+            rows[cursor.y]
+        }
+    }
+
+    struct Screen {
+        let countOfRows: Int
+        let countOfColumns: Int
+
         var rowOffset: Int
         var columnOffset: Int
+    }
+
+    struct EditorConfig {
+        let screen: Screen
+        let origTermios: termios
+
+        var file: File
     }
 
     public static func main() async throws {
@@ -77,13 +91,9 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            cursorPosition: CursorPosition(x: 0, y: 0),
-            screenRows: height,
-            screenCols: width,
-            origTermios: .init(),
-            rows: [],
-            rowOffset: 0,
-            columnOffset: 0
+            screen: Screen(countOfRows: height, countOfColumns: width, rowOffset: 0, columnOffset: 0),
+            origTermios: termios(),
+            file: File(rows: [], cursor: Cursor(x: 0, y: 0))
         )
     }
 
@@ -105,31 +115,24 @@ public class SwiftKilo {
                 switch action {
                 // cursor
                 case .moveCursorUp:
-                    editorConfig.cursorPosition.move(.up, limit: 0)
+                    editorConfig.file.cursor.move(.up, distance: 1)
                 case .moveCursorLeft:
-                    editorConfig.cursorPosition.move(.left, limit: 0)
+                    editorConfig.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    editorConfig.cursorPosition.move(.right, limit: editorConfig.rows[editorConfig.cursorPosition.y].count)
+                    let distance = editorConfig.file.cursor.x >= editorConfig.file.currentRow.count ? 0 : 1
+                    editorConfig.file.cursor.move(.right, distance: distance)
                 case .moveCursorDown:
-                    editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
+                    let distance = editorConfig.file.cursor.y >= editorConfig.file.rows.count ? 0 : 1
+                    editorConfig.file.cursor.move(.down, distance: distance)
                 case .moveCursorToBeginningOfLine:
-                    for _ in 0..<editorConfig.screenCols {
-                        editorConfig.cursorPosition.move(.left, limit: 0)
-                    }
+                    editorConfig.file.cursor.x = 0
                 case .moveCursorToEndOfLine:
-                    // FIXME: 多分その行の文字列を無視して画面端に行く
-                    for _ in 0..<editorConfig.screenCols {
-                        editorConfig.cursorPosition.move(.right, limit: editorConfig.screenCols)
-                    }
+                    editorConfig.file.cursor.x = editorConfig.file.currentRow.count
                 // page
                 case .movePageUp:
-                    for _ in 0..<editorConfig.screenRows {
-                        editorConfig.cursorPosition.move(.up, limit: 0)
-                    }
+                    editorConfig.file.cursor.move(.up, distance: editorConfig.screen.countOfRows)
                 case .movePageDown:
-                    for _ in 0..<editorConfig.screenRows {
-                        editorConfig.cursorPosition.move(.down, limit: editorConfig.rows.count)
-                    }
+                    editorConfig.file.cursor.move(.down, distance: editorConfig.screen.countOfRows)
                 // text
                 case .delete:
                     // TODO: impl
@@ -141,15 +144,10 @@ public class SwiftKilo {
                     return
                 }
 
-                let currentRowLength: Int
-                if editorConfig.cursorPosition.y >= editorConfig.rows.count {
-                    currentRowLength = editorConfig.rows[editorConfig.cursorPosition.y].count
+                if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
+                    editorConfig.file.cursor.x = 0
                 } else {
-                    currentRowLength = 0
-                }
-                if editorConfig.cursorPosition.x > currentRowLength {
-                    // TODO: 今の仕組みだとうまくいかないので直す
-                    editorConfig.cursorPosition.x = currentRowLength
+                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow.count)
                 }
             }
         }
