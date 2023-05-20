@@ -165,26 +165,26 @@ public class SwiftKilo {
             rows = []
         }
 
-        editorConfig.rows = rows
+        editorConfig.file.rows = rows
     }
 
     // MARK: rendering
 
     private func scroll() {
-        if editorConfig.cursorPosition.y < editorConfig.rowOffset {
-            editorConfig.rowOffset = editorConfig.cursorPosition.y
+        if editorConfig.file.cursor.y < editorConfig.screen.rowOffset {
+            editorConfig.screen.rowOffset = editorConfig.file.cursor.y
         }
 
-        if editorConfig.cursorPosition.y >= editorConfig.rowOffset + editorConfig.screenRows {
-            editorConfig.rowOffset = editorConfig.cursorPosition.y - editorConfig.screenRows + 1
+        if editorConfig.file.cursor.y >= editorConfig.screen.rowOffset + editorConfig.screen.countOfRows {
+            editorConfig.screen.rowOffset = editorConfig.file.cursor.y - editorConfig.screen.countOfRows + 1
         }
 
-        if editorConfig.cursorPosition.x < editorConfig.columnOffset {
-            editorConfig.columnOffset = editorConfig.cursorPosition.x
+        if editorConfig.file.cursor.x < editorConfig.screen.columnOffset {
+            editorConfig.screen.columnOffset = editorConfig.file.cursor.x
         }
 
-        if editorConfig.cursorPosition.x >= editorConfig.columnOffset + editorConfig.screenCols {
-            editorConfig.columnOffset = editorConfig.cursorPosition.x - editorConfig.screenCols + 1
+        if editorConfig.file.cursor.x >= editorConfig.screen.columnOffset + editorConfig.screen.countOfColumns {
+            editorConfig.screen.columnOffset = editorConfig.file.cursor.x - editorConfig.screen.countOfColumns + 1
         }
     }
 
