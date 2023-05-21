@@ -70,9 +70,8 @@ public class SwiftKilo {
     }
 
     struct EditorConfig {
-        let screen: Screen
-        let origTermios: termios
-
+        var screen: Screen
+        var origTermios: termios
         var file: File
     }
 
@@ -198,7 +197,7 @@ public class SwiftKilo {
 
         drawRows()
 
-        buffer.append("\u{1b}[\(editorConfig.cursorPosition.y - editorConfig.rowOffset + 1);\((editorConfig.cursorPosition.x - editorConfig.columnOffset) + 1)H")
+        buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.file.cursor.x - editorConfig.screen.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
@@ -206,14 +205,14 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        for y in (0..<editorConfig.screenRows) {
-            let fileRow = y + editorConfig.rowOffset
+        for y in (0..<editorConfig.screen.countOfRows) {
+            let fileRow = y + editorConfig.screen.rowOffset
 
-            if (fileRow >= editorConfig.rows.count) {
-                if editorConfig.rows.count == 0 && y == editorConfig.screenRows / 3 {
-                    var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screenCols))
+            if (fileRow >= editorConfig.file.rows.count) {
+                if editorConfig.file.rows.count == 0 && y == editorConfig.screen.countOfRows / 3 {
+                    var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screen.countOfColumns))
 
-                    var padding = (editorConfig.screenCols - message.count) / 2
+                    var padding = (editorConfig.screen.countOfColumns - message.count) / 2
                     if padding > 0 {
                         buffer.append("~")
                         padding -= 1
@@ -226,11 +225,11 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.rows[fileRow].dropFirst(editorConfig.columnOffset).prefix(editorConfig.screenCols)))
+                buffer.append(String(editorConfig.file.rows[fileRow].dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
             }
 
             buffer.append("\u{1b}[K")
-            if y < editorConfig.screenRows - 1 {
+            if y < editorConfig.screen.countOfRows - 1 {
                 buffer.append("\r\n")
             }
         }
