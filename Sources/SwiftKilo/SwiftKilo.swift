@@ -114,15 +114,21 @@ public class SwiftKilo {
                 switch action {
                 // cursor
                 case .moveCursorUp:
+                    guard editorConfig.file.cursor.y > 0 else { break }
+
                     editorConfig.file.cursor.move(.up, distance: 1)
                 case .moveCursorLeft:
+                    guard editorConfig.file.cursor.x > 0 else { break }
+
                     editorConfig.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    let distance = editorConfig.file.cursor.x >= editorConfig.file.currentRow.count ? 0 : 1
-                    editorConfig.file.cursor.move(.right, distance: distance)
+                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow.count else { return }
+
+                    editorConfig.file.cursor.move(.right, distance: 1)
                 case .moveCursorDown:
-                    let distance = editorConfig.file.cursor.y >= editorConfig.file.rows.count ? 0 : 1
-                    editorConfig.file.cursor.move(.down, distance: distance)
+                    guard editorConfig.file.cursor.y < editorConfig.file.rows.count else { return }
+
+                    editorConfig.file.cursor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
                     editorConfig.file.cursor.x = 0
                 case .moveCursorToEndOfLine:
