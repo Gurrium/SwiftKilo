@@ -56,8 +56,10 @@ public class SwiftKilo {
         var rows: [String]
         var cursor: Cursor
 
-        var currentRow: String {
-            rows[cursor.y]
+        var currentRow: String? {
+            guard cursor.y < rows.count else { return nil }
+
+            return rows[cursor.y]
         }
     }
 
@@ -122,22 +124,23 @@ public class SwiftKilo {
 
                     editorConfig.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow.count else { return }
+                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow?.count ?? 0 else { break }
 
                     editorConfig.file.cursor.move(.right, distance: 1)
                 case .moveCursorDown:
-                    guard editorConfig.file.cursor.y < editorConfig.file.rows.count else { return }
+                    guard editorConfig.file.cursor.y < editorConfig.file.rows.count else { break }
 
                     editorConfig.file.cursor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
                     editorConfig.file.cursor.x = 0
                 case .moveCursorToEndOfLine:
-                    editorConfig.file.cursor.x = editorConfig.file.currentRow.count
+                    editorConfig.file.cursor.x = editorConfig.file.currentRow?.count ?? 0
                 // page
                 case .movePageUp:
-                    editorConfig.file.cursor.move(.up, distance: editorConfig.screen.countOfRows)
+                    // FIXME: なにかおかしい
+                    editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.y))
                 case .movePageDown:
-                    editorConfig.file.cursor.move(.down, distance: editorConfig.screen.countOfRows)
+                    editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.y))
                 // text
                 case .delete:
                     // TODO: impl
@@ -152,7 +155,7 @@ public class SwiftKilo {
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
                     editorConfig.file.cursor.x = 0
                 } else {
-                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow.count)
+                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow?.count ?? 0)
                 }
             }
         }
