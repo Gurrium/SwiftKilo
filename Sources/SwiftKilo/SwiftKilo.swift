@@ -137,7 +137,6 @@ public class SwiftKilo {
                     editorConfig.file.cursor.x = editorConfig.file.currentRow?.count ?? 0
                 // page
                 case .movePageUp:
-                    // FIXME: なにかおかしい
                     editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.y))
                 case .movePageDown:
                     editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.y))
