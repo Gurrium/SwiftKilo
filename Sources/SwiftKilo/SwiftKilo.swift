@@ -2,7 +2,8 @@ import Foundation
 import AsyncAlgorithms
 import System
 
-let versionString = "0.1"
+let kVersionString = "0.1"
+let kTabStop = 8
 
 struct Interval<Value>: AsyncSequence {
     typealias AsyncIterator = Iterator
@@ -53,10 +54,15 @@ public class SwiftKilo {
     }
 
     struct File {
-        var rows: [String]
+        struct Row {
+            var raw: String
+            var coocked: String
+        }
+
+        var rows: [Row]
         var cursor: Cursor
 
-        var currentRow: String? {
+        var currentRow: Row? {
             guard cursor.y < rows.count else { return nil }
 
             return rows[cursor.y]
@@ -124,7 +130,7 @@ public class SwiftKilo {
 
                     editorConfig.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow?.count ?? 0 else { break }
+                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow?.raw.count ?? 0 else { break }
 
                     editorConfig.file.cursor.move(.right, distance: 1)
                 case .moveCursorDown:
@@ -134,7 +140,7 @@ public class SwiftKilo {
                 case .moveCursorToBeginningOfLine:
                     editorConfig.file.cursor.x = 0
                 case .moveCursorToEndOfLine:
-                    editorConfig.file.cursor.x = editorConfig.file.currentRow?.count ?? 0
+                    editorConfig.file.cursor.x = editorConfig.file.currentRow?.raw.count ?? 0
                 // page
                 case .movePageUp:
                     editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.y))
@@ -154,7 +160,7 @@ public class SwiftKilo {
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
                     editorConfig.file.cursor.x = 0
                 } else {
-                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow?.count ?? 0)
+                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow?.raw.count ?? 0)
                 }
             }
         }
@@ -163,11 +169,20 @@ public class SwiftKilo {
     // MARK: file i/o
 
     private func openEditor(filePath: String?) throws {
-        let rows: [String]
+        let rows: [File.Row]
         if let filePath,
            let data = FileManager.default.contents(atPath: filePath),
            let contents = String(data: data, encoding: .utf8) {
-            rows = contents.split(whereSeparator: \.isNewline).map { String($0) }
+            rows = contents.split(whereSeparator: \.isNewline).map { line in
+                let raw = String(line)
+                let chopped  = raw.enumerated().flatMap { i, egc in
+                    guard egc == "\t" else { return [egc] }
+
+                    return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
+                }
+
+                return File.Row(raw: raw, coocked: String(chopped))
+            }
         } else {
             rows = []
         }
@@ -218,7 +233,7 @@ public class SwiftKilo {
 
             if (fileRow >= editorConfig.file.rows.count) {
                 if editorConfig.file.rows.count == 0 && y == editorConfig.screen.countOfRows / 3 {
-                    var message = String("SwiftKilo editor -- version \(versionString)".prefix(editorConfig.screen.countOfColumns))
+                    var message = String("SwiftKilo editor -- version \(kVersionString)".prefix(editorConfig.screen.countOfColumns))
 
                     var padding = (editorConfig.screen.countOfColumns - message.count) / 2
                     if padding > 0 {
@@ -233,7 +248,7 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.file.rows[fileRow].dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
+                buffer.append(String(editorConfig.file.rows[fileRow].coocked.dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
             }
 
             buffer.append("\u{1b}[K")
