@@ -75,6 +75,7 @@ public class SwiftKilo {
 
         var rowOffset: Int
         var columnOffset: Int
+        var cursor: Cursor
     }
 
     struct EditorConfig {
@@ -98,7 +99,7 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            screen: Screen(countOfRows: height, countOfColumns: width, rowOffset: 0, columnOffset: 0),
+            screen: Screen(countOfRows: height, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
             file: File(rows: [], cursor: Cursor(x: 0, y: 0))
         )
@@ -193,6 +194,19 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func scroll() {
+        editorConfig.screen.cursor.x = editorConfig.file.currentRow?.raw.prefix(editorConfig.file.cursor.x).enumerated().reduce(0) { partialResult, e in
+            let (i, char) = e
+            let d: Int
+
+            if char == "\t" {
+                d = kTabStop - i % kTabStop
+            } else {
+                d = 1
+            }
+
+            return partialResult + d
+        } ?? editorConfig.file.cursor.x
+
         if editorConfig.file.cursor.y < editorConfig.screen.rowOffset {
             editorConfig.screen.rowOffset = editorConfig.file.cursor.y
         }
@@ -202,11 +216,11 @@ public class SwiftKilo {
         }
 
         if editorConfig.file.cursor.x < editorConfig.screen.columnOffset {
-            editorConfig.screen.columnOffset = editorConfig.file.cursor.x
+            editorConfig.screen.columnOffset = editorConfig.screen.cursor.x
         }
 
         if editorConfig.file.cursor.x >= editorConfig.screen.columnOffset + editorConfig.screen.countOfColumns {
-            editorConfig.screen.columnOffset = editorConfig.file.cursor.x - editorConfig.screen.countOfColumns + 1
+            editorConfig.screen.columnOffset = editorConfig.screen.cursor.x - editorConfig.screen.countOfColumns + 1
         }
     }
 
@@ -220,7 +234,7 @@ public class SwiftKilo {
 
         drawRows()
 
-        buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.file.cursor.x - editorConfig.screen.columnOffset) + 1)H")
+        buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.x - editorConfig.screen.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
