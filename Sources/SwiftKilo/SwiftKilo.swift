@@ -99,7 +99,7 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            screen: Screen(countOfRows: height, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
+            screen: Screen(countOfRows: height - 1, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
             file: File(rows: [], cursor: Cursor(x: 0, y: 0))
         )
@@ -233,6 +233,7 @@ public class SwiftKilo {
         buffer.append("\u{1b}[H")
 
         drawRows()
+        drawStatusBar()
 
         buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.x - editorConfig.screen.columnOffset) + 1)H")
 
@@ -266,10 +267,14 @@ public class SwiftKilo {
             }
 
             buffer.append("\u{1b}[K")
-            if y < editorConfig.screen.countOfRows - 1 {
-                buffer.append("\r\n")
-            }
+            buffer.append("\r\n")
         }
+    }
+
+    private func drawStatusBar() {
+        buffer.append("\u{1b}[7m")
+        buffer.append(Array(repeating: " ", count: editorConfig.screen.countOfColumns).joined())
+        buffer.append("\u{1b}[m")
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
