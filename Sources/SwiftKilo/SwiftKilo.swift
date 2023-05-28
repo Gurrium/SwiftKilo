@@ -59,6 +59,8 @@ public class SwiftKilo {
             var coocked: String
         }
 
+        let path: String?
+
         var rows: [Row]
         var cursor: Cursor
 
@@ -85,7 +87,8 @@ public class SwiftKilo {
     }
 
     public static func main() async throws {
-        try await SwiftKilo()?.main()
+        let args = CommandLine.arguments
+        try await SwiftKilo(filePath: args.count > 1 ? args[1] : nil)?.main()
     }
 
     private let fileHandle: FileHandle
@@ -93,7 +96,7 @@ public class SwiftKilo {
     private var buffer = ""
     private var keyProcessor = KeyProcessor()
 
-    init?(fileHandle: FileHandle = .standardInput) {
+    init?(filePath: String?, fileHandle: FileHandle = .standardInput) {
         self.fileHandle = fileHandle
 
         guard let (height, width) = getWindowSize() else { return nil }
@@ -101,7 +104,7 @@ public class SwiftKilo {
         editorConfig = EditorConfig(
             screen: Screen(countOfRows: height - 1, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
-            file: File(rows: [], cursor: Cursor(x: 0, y: 0))
+            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0))
         )
     }
 
@@ -112,8 +115,7 @@ public class SwiftKilo {
     private func main() async throws {
         enableRawMode()
 
-        let args = CommandLine.arguments
-        try openEditor(filePath: args.count > 1 ? args[1] : nil)
+        try openEditor()
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
@@ -169,9 +171,9 @@ public class SwiftKilo {
 
     // MARK: file i/o
 
-    private func openEditor(filePath: String?) throws {
+    private func openEditor() throws {
         let rows: [File.Row]
-        if let filePath,
+        if let filePath = editorConfig.file.path,
            let data = FileManager.default.contents(atPath: filePath),
            let contents = String(data: data, encoding: .utf8) {
             rows = contents.split(whereSeparator: \.isNewline).map { line in
@@ -273,7 +275,7 @@ public class SwiftKilo {
 
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
-        buffer.append(Array(repeating: " ", count: editorConfig.screen.countOfColumns).joined())
+        buffer.append("\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines".padding(toLength: editorConfig.screen.countOfColumns, withPad: " ", startingAt: 0))
         buffer.append("\u{1b}[m")
     }
 
