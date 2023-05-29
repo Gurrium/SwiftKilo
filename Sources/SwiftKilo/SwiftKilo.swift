@@ -275,7 +275,15 @@ public class SwiftKilo {
 
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
-        buffer.append("\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines".padding(toLength: editorConfig.screen.countOfColumns, withPad: " ", startingAt: 0))
+        // FIXME: use suffix()
+        let lstatus = "\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines"
+        let rstatus = "\(editorConfig.file.cursor.y + 1)/\(editorConfig.file.rows.count)"
+
+        if lstatus.count + rstatus.count <= editorConfig.screen.countOfColumns {
+            buffer.append(([lstatus] + Array(repeating: " ", count: editorConfig.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
+        } else {
+            buffer.append(lstatus.padding(toLength: editorConfig.screen.countOfColumns, withPad: " ", startingAt: 0))
+        }
         buffer.append("\u{1b}[m")
     }
 
