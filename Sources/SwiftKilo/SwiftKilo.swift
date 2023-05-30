@@ -80,10 +80,21 @@ public class SwiftKilo {
         var cursor: Cursor
     }
 
+    struct StatusMessage {
+        let content: String
+        let didSetAt: Date
+
+        init(content: String) {
+            self.content = content
+            self.didSetAt = Date()
+        }
+    }
+
     struct EditorConfig {
         var screen: Screen
         var origTermios: termios
         var file: File
+        var statusMessage: StatusMessage?
     }
 
     public static func main() async throws {
@@ -102,7 +113,7 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            screen: Screen(countOfRows: height - 1, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
+            screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
             file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0))
         )
@@ -116,6 +127,8 @@ public class SwiftKilo {
         enableRawMode()
 
         try openEditor()
+
+        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-Q = quit")
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
@@ -235,7 +248,10 @@ public class SwiftKilo {
         buffer.append("\u{1b}[H")
 
         drawRows()
+        buffer.append("\r\n")
         drawStatusBar()
+        buffer.append("\r\n")
+        drawMessageBar()
 
         buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.x - editorConfig.screen.columnOffset) + 1)H")
 
@@ -269,7 +285,10 @@ public class SwiftKilo {
             }
 
             buffer.append("\u{1b}[K")
-            buffer.append("\r\n")
+
+            if y < editorConfig.screen.countOfRows - 1 {
+                buffer.append("\r\n")
+            }
         }
     }
 
@@ -285,6 +304,15 @@ public class SwiftKilo {
             buffer.append(lstatus.padding(toLength: editorConfig.screen.countOfColumns, withPad: " ", startingAt: 0))
         }
         buffer.append("\u{1b}[m")
+    }
+
+    private func drawMessageBar() {
+        buffer.append("\u{1b}[K")
+
+        guard let statusMessage = editorConfig.statusMessage,
+              statusMessage.didSetAt.distance(to: Date()) < 5 else { return }
+
+        buffer.append(String(statusMessage.content.prefix(editorConfig.screen.countOfColumns)))
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
