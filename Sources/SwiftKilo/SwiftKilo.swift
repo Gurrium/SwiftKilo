@@ -55,8 +55,36 @@ public class SwiftKilo {
 
     struct File {
         struct Row {
-            var raw: String
-            var coocked: String
+            var raw: String {
+                didSet {
+                    cook()
+                }
+            }
+            var cooked: String {
+                _cooked
+            }
+
+            private var _cooked = ""
+            private mutating func cook() {
+                let chopped = raw.enumerated().flatMap { i, egc in
+                    guard egc == "\t" else { return [egc] }
+
+                    return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
+                }
+                _cooked = String(chopped)
+            }
+
+            init(raw: String) {
+                self.raw = raw
+
+                cook()
+            }
+
+            mutating func insert(_ chr: Character, at index: Int) {
+                let stringIndex = raw.index(raw.startIndex, offsetBy: index)
+
+                raw.insert(chr, at: stringIndex)
+            }
         }
 
         let path: String?
@@ -190,14 +218,7 @@ public class SwiftKilo {
            let data = FileManager.default.contents(atPath: filePath),
            let contents = String(data: data, encoding: .utf8) {
             rows = contents.split(whereSeparator: \.isNewline).map { line in
-                let raw = String(line)
-                let chopped  = raw.enumerated().flatMap { i, egc in
-                    guard egc == "\t" else { return [egc] }
-
-                    return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
-                }
-
-                return File.Row(raw: raw, coocked: String(chopped))
+                return File.Row(raw: String(line))
             }
         } else {
             rows = []
@@ -281,7 +302,7 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.file.rows[fileRow].coocked.dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
+                buffer.append(String(editorConfig.file.rows[fileRow].cooked.dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
             }
 
             buffer.append("\u{1b}[K")
