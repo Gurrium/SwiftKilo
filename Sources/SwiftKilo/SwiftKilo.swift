@@ -98,7 +98,7 @@ public class SwiftKilo {
             return rows[cursor.y]
         }
 
-        mutating func isnert(_ char: Character) {
+        mutating func insert(_ char: Character) {
             if (cursor.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
