@@ -424,4 +424,7 @@ enum EditorAction {
 
     // MARK: editor
     case quit
+
+    // MARK: mode change
+    case changeModeToInput
 }

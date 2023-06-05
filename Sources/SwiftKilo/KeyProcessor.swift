@@ -37,6 +37,8 @@ final class KeyProcessor {
             action = .moveCursorToEndOfLine
         case Array("\u{1b}[3~".unicodeScalars):
             action = .delete
+        case ["i"]:
+            action = .changeModeToInput
         default:
             action = nil
         }
