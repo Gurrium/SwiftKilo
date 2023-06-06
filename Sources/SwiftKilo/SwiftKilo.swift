@@ -129,11 +129,17 @@ public class SwiftKilo {
         }
     }
 
+    enum Mode {
+        case normal
+        case insert
+    }
+
     struct EditorConfig {
         var screen: Screen
         var origTermios: termios
         var file: File
         var statusMessage: StatusMessage?
+        var mode: Mode
     }
 
     public static func main() async throws {
@@ -154,7 +160,8 @@ public class SwiftKilo {
         editorConfig = EditorConfig(
             screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
-            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0))
+            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0)),
+            mode: .normal
         )
     }
 
@@ -210,6 +217,8 @@ public class SwiftKilo {
                     fileHandle.print("\u{1b}[H")
 
                     return
+                case .changeModeToInput:
+                    editorConfig.mode = .insert
                 }
 
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
