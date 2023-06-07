@@ -180,7 +180,7 @@ public class SwiftKilo {
             refreshScreen()
 
             if let scalar,
-               let action = keyProcessor.process(scalar) {
+               let action = keyProcessor.process(scalar, mode: editorConfig.mode) {
                 switch action {
                 // cursor
                 case .moveCursorUp:
@@ -212,6 +212,9 @@ public class SwiftKilo {
                 case .delete:
                     // TODO: impl
                     break
+                case .insert(let scalar):
+                    editorConfig.file.insert(Character.init(scalar))
+                // editor
                 case .quit:
                     fileHandle.print("\u{1b}[2J")
                     fileHandle.print("\u{1b}[H")
@@ -430,10 +433,9 @@ enum EditorAction {
 
     // MARK: text
     case delete
+    case insert(UnicodeScalar)
 
     // MARK: editor
     case quit
-
-    // MARK: mode change
     case changeModeToInput
 }

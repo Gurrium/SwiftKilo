@@ -11,7 +11,17 @@ final class KeyProcessor {
     private var state = [UnicodeScalar]()
     private var stateRefreshingTask: Task<Void, Never>?
 
-    func process(_ scalar: UnicodeScalar) -> EditorAction? {
+    func process(_ scalar: UnicodeScalar, mode: SwiftKilo.Mode) -> EditorAction? {
+        switch mode {
+        case .normal:
+            return processNormalMode(scalar: scalar)
+        case .insert:
+            // TODO: .normalに戻せるようにする
+            return .insert(scalar)
+        }
+    }
+
+    private func processNormalMode(scalar: UnicodeScalar) -> EditorAction? {
         var action: EditorAction?
 
         state.append(scalar)
