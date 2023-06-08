@@ -222,6 +222,8 @@ public class SwiftKilo {
                     return
                 case .changeModeToInput:
                     editorConfig.mode = .insert
+                case .changeModeToNormal:
+                    editorConfig.mode = .normal
                 }
 
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
@@ -438,4 +440,5 @@ enum EditorAction {
     // MARK: editor
     case quit
     case changeModeToInput
+    case changeModeToNormal
 }
