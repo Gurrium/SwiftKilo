@@ -16,8 +16,7 @@ final class KeyProcessor {
         case .normal:
             return processNormalMode(scalar: scalar)
         case .insert:
-            // TODO: .normalに戻せるようにする
-            return .insert(scalar)
+            return processInsertMode(scalar: scalar)
         }
     }
 
@@ -65,6 +64,19 @@ final class KeyProcessor {
 
                 state = []
             }
+        }
+
+        return action
+    }
+
+    private func processInsertMode(scalar: UnicodeScalar) -> EditorAction? {
+        var action: EditorAction?
+
+        state.append(scalar)
+
+        switch state {
+        default:
+            action = .insert(scalar)
         }
 
         return action
