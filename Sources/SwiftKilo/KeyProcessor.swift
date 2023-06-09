@@ -79,6 +79,10 @@ final class KeyProcessor {
             action = .insert(scalar)
         }
 
+        if action != nil {
+            state = []
+        }
+
         return action
     }
 }
