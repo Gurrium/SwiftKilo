@@ -75,6 +75,8 @@ final class KeyProcessor {
         state.append(scalar)
 
         switch state {
+        case ["\u{1b}"]:
+            action = .changeModeToNormal
         default:
             action = .insert(scalar)
         }
