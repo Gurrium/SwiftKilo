@@ -77,6 +77,14 @@ final class KeyProcessor {
         switch state {
         case ["\u{1b}"]:
             action = .changeModeToNormal
+        case [.init("m").modified(with: .control)]:
+            // TODO: impl
+            break
+        case [.init("h").modified(with: .control)]:
+            // TODO: impl
+            break
+        case [.init("l").modified(with: .control)]:
+            break
         default:
             action = .insert(scalar)
         }
