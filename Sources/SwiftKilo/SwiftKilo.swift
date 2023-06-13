@@ -108,6 +108,14 @@ public class SwiftKilo {
             rows[cursor.y].insert(char, at: cursor.x)
             cursor.move(.right, distance: 1)
         }
+
+        func save() throws {
+            guard let path else { return }
+
+            let url = URL(fileURLWithPath: path)
+
+            try rows.map(\.raw).joined(separator: "\r\n").write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     struct Screen {
@@ -174,7 +182,7 @@ public class SwiftKilo {
 
         try openEditor()
 
-        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-Q = quit")
+        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit")
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
@@ -224,6 +232,13 @@ public class SwiftKilo {
                     editorConfig.mode = .insert
                 case .changeModeToNormal:
                     editorConfig.mode = .normal
+                case .save:
+                    do {
+                       try editorConfig.file.save()
+                        editorConfig.statusMessage = .init(content: "Saved")
+                    } catch {
+                        editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
+                    }
                 }
 
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
@@ -441,4 +456,5 @@ enum EditorAction {
     case quit
     case changeModeToInput
     case changeModeToNormal
+    case save
 }

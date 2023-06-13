@@ -48,6 +48,8 @@ final class KeyProcessor {
             action = .delete
         case ["i"]:
             action = .changeModeToInput
+        case [.init("s").modified(with: .control)]:
+            action = .save
         default:
             action = nil
         }
