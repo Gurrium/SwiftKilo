@@ -91,6 +91,7 @@ public class SwiftKilo {
 
         var rows: [Row]
         var cursor: Cursor
+        var isDirty: Bool
 
         var currentRow: Row? {
             guard cursor.y < rows.count else { return nil }
@@ -168,7 +169,7 @@ public class SwiftKilo {
         editorConfig = EditorConfig(
             screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
             origTermios: termios(),
-            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0)),
+            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0), isDirty: false),
             mode: .normal
         )
     }
