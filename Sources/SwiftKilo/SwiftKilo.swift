@@ -100,6 +100,8 @@ public class SwiftKilo {
         }
 
         mutating func insert(_ char: Character) {
+            isDirty = true
+
             if (cursor.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
@@ -110,12 +112,14 @@ public class SwiftKilo {
             cursor.move(.right, distance: 1)
         }
 
-        func save() throws {
+        mutating func save() throws {
             guard let path else { return }
 
             let url = URL(fileURLWithPath: path)
 
             try rows.map(\.raw).joined(separator: "\r\n").write(to: url, atomically: true, encoding: .utf8)
+
+            isDirty = false
         }
     }
 
@@ -356,8 +360,8 @@ public class SwiftKilo {
 
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
-        // FIXME: use suffix()
-        let lstatus = "\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines"
+
+        let lstatus = "\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines \(editorConfig.file.isDirty ? "(modified)" : "")"
         let rstatus = "\(editorConfig.file.cursor.y + 1)/\(editorConfig.file.rows.count)"
 
         if lstatus.count + rstatus.count <= editorConfig.screen.countOfColumns {
