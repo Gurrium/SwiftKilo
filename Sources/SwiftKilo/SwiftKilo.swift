@@ -4,6 +4,7 @@ import System
 
 let kVersionString = "0.1"
 let kTabStop = 8
+let kQuitTimes = 3
 
 struct Interval<Value>: AsyncSequence {
     typealias AsyncIterator = Iterator
@@ -153,6 +154,7 @@ public class SwiftKilo {
         var file: File
         var statusMessage: StatusMessage?
         var mode: Mode
+        var quitTimes = kQuitTimes
     }
 
     public static func main() async throws {
@@ -229,6 +231,12 @@ public class SwiftKilo {
                     editorConfig.file.insert(Character.init(scalar))
                 // editor
                 case .quit:
+                    if editorConfig.file.isDirty && editorConfig.quitTimes > 0 {
+                        editorConfig.statusMessage = .init(content: "WARNING!!! File has unsaved changes. Press Ctrl-Q \(editorConfig.quitTimes) more times to quit.")
+                        editorConfig.quitTimes -= 1
+
+                        break
+                    }
                     fileHandle.print("\u{1b}[2J")
                     fileHandle.print("\u{1b}[H")
 
@@ -244,6 +252,13 @@ public class SwiftKilo {
                     } catch {
                         editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
+                }
+
+                switch action {
+                case .quit:
+                    break
+                default:
+                    editorConfig.quitTimes = kQuitTimes
                 }
 
                 if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
