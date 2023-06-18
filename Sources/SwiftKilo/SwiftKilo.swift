@@ -82,9 +82,19 @@ public class SwiftKilo {
             }
 
             mutating func insert(_ chr: Character, at index: Int) {
+                guard index < raw.count + 1 else { return }
+
                 let stringIndex = raw.index(raw.startIndex, offsetBy: index)
 
                 raw.insert(chr, at: stringIndex)
+            }
+
+            mutating func remove(at index: Int) {
+                guard index < raw.count + 1 else { return }
+
+                let stringIndex = raw.index(raw.startIndex, offsetBy: index)
+
+                raw.remove(at: stringIndex)
             }
         }
 
@@ -101,8 +111,6 @@ public class SwiftKilo {
         }
 
         mutating func insert(_ char: Character) {
-            isDirty = true
-
             if (cursor.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
@@ -111,6 +119,13 @@ public class SwiftKilo {
 
             rows[cursor.y].insert(char, at: cursor.x)
             cursor.move(.right, distance: 1)
+        }
+
+        mutating func delete() {
+            // TODO: 改行を削除するパターンを実装する
+            rows[cursor.y].remove(at: cursor.x - 1)
+            cursor.move(.right, distance: 1)
+            isDirty = true
         }
 
         mutating func save() throws {
