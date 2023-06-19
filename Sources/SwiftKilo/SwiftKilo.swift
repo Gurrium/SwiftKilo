@@ -90,7 +90,7 @@ public class SwiftKilo {
             }
 
             mutating func remove(at index: Int) {
-                guard index < raw.count + 1 else { return }
+                guard index < raw.count else { return }
 
                 let stringIndex = raw.index(raw.startIndex, offsetBy: index)
 
@@ -124,7 +124,7 @@ public class SwiftKilo {
         mutating func delete() {
             // TODO: 改行を削除するパターンを実装する
             rows[cursor.y].remove(at: cursor.x - 1)
-            cursor.move(.right, distance: 1)
+            cursor.move(.left, distance: 1)
             isDirty = true
         }
 
