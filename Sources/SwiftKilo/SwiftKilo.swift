@@ -121,7 +121,7 @@ public class SwiftKilo {
             cursor.move(.right, distance: 1)
         }
 
-        mutating func delete() {
+        mutating func deleteCharacter() {
             // TODO: 改行を削除するパターンを実装する
             rows[cursor.y].remove(at: cursor.x - 1)
             cursor.move(.left, distance: 1)
@@ -240,8 +240,7 @@ public class SwiftKilo {
                     editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.y))
                 // text
                 case .delete:
-                    // TODO: impl
-                    break
+                    editorConfig.file.deleteCharacter()
                 case .insert(let scalar):
                     editorConfig.file.insert(Character.init(scalar))
                 // editor

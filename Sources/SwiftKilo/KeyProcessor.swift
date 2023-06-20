@@ -83,8 +83,7 @@ final class KeyProcessor {
             // TODO: impl
             break
         case [.init("h").modified(with: .control)]:
-            // TODO: impl
-            break
+            action = .delete
         case [.init("l").modified(with: .control)]:
             break
         default:
