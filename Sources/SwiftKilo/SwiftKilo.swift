@@ -122,9 +122,20 @@ public class SwiftKilo {
         }
 
         mutating func deleteCharacter() {
-            // TODO: 改行を削除するパターンを実装する
-            rows[cursor.y].remove(at: cursor.x - 1)
-            cursor.move(.left, distance: 1)
+            if cursor.x > 0 {
+                rows[cursor.y].remove(at: cursor.x - 1)
+                cursor.move(.left, distance: 1)
+            } else if cursor.y > 0 {
+                let distance = rows[cursor.y - 1].raw.count
+
+                rows[cursor.y - 1] = .init(raw: rows[cursor.y - 1].raw + rows[cursor.y].raw)
+                rows.remove(at: cursor.y)
+
+                cursor.move(.up, distance: 1)
+                cursor.move(.right, distance: distance)
+            } else {
+                return
+            }
             isDirty = true
         }
 
