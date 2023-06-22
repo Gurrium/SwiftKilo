@@ -119,6 +119,8 @@ public class SwiftKilo {
 
             rows[cursor.y].insert(char, at: cursor.x)
             cursor.move(.right, distance: 1)
+
+            isDirty = true
         }
 
         mutating func deleteCharacter() {
