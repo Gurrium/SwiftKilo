@@ -80,8 +80,7 @@ final class KeyProcessor {
         case ["\u{1b}"]:
             action = .changeModeToNormal
         case [.init("m").modified(with: .control)]:
-            // TODO: impl
-            break
+            action = .newLine
         case [.init("h").modified(with: .control)]:
             action = .delete
         case [.init("l").modified(with: .control)]:
