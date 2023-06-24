@@ -98,8 +98,7 @@ public class SwiftKilo {
             }
         }
 
-        let path: String?
-
+        var path: String?
         var rows: [Row]
         var cursor: Cursor
         var isDirty: Bool
@@ -292,6 +291,24 @@ public class SwiftKilo {
                     editorConfig.mode = .normal
                 case .save:
                     do {
+                        if editorConfig.file.path == nil {
+                            var fileName = ""
+                            editorConfig.statusMessage = .init(content: "Save as: ")
+
+                            for try await character in fileHandle.bytes.characters {
+                                if character == "\n" {
+                                    break
+                                }
+
+                                refreshScreen()
+
+                                fileName.append(character)
+                                editorConfig.statusMessage = .init(content: "Save as: \(fileName)")
+                            }
+
+                            editorConfig.file.path = fileName
+                        }
+
                        try editorConfig.file.save()
                         editorConfig.statusMessage = .init(content: "Saved")
                     } catch {
