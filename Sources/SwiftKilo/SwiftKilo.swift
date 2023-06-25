@@ -294,16 +294,18 @@ public class SwiftKilo {
                         if editorConfig.file.path == nil {
                             var fileName = ""
                             editorConfig.statusMessage = .init(content: "Save as: ")
+                            refreshScreen()
 
-                            for try await character in fileHandle.bytes.characters {
-                                if character == "\n" {
+                            for try await character in merge(fileHandle.bytes.characters.map({ (element: AsyncCharacterSequence<FileHandle.AsyncBytes>.Element) -> AsyncCharacterSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
+                                guard let character else { continue }
+
+                                if character.isNewline {
                                     break
                                 }
 
-                                refreshScreen()
-
                                 fileName.append(character)
                                 editorConfig.statusMessage = .init(content: "Save as: \(fileName)")
+                                refreshScreen()
                             }
 
                             editorConfig.file.path = fileName
