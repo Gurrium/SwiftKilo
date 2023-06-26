@@ -296,11 +296,16 @@ public class SwiftKilo {
                             editorConfig.statusMessage = .init(content: "Save as: ")
                             refreshScreen()
 
-                            for try await character in merge(fileHandle.bytes.characters.map({ (element: AsyncCharacterSequence<FileHandle.AsyncBytes>.Element) -> AsyncCharacterSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
-                                guard let character else { continue }
+                            for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
+                                guard let scalar else { continue }
 
-                                if character.isNewline {
+                                let character = Character(scalar)
+
+                                if character.isNewline && fileName.count > 1 {
                                     break
+                                }
+                                if !character.isLetter {
+                                    continue
                                 }
 
                                 fileName.append(character)
