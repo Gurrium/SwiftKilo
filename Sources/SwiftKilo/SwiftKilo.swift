@@ -291,33 +291,49 @@ public class SwiftKilo {
                     editorConfig.mode = .normal
                 case .save:
                     do {
-                        if editorConfig.file.path == nil {
-                            var fileName = ""
+                        if (editorConfig.file.path ?? "").isEmpty {
+                            var fileName: String? = nil
                             editorConfig.statusMessage = .init(content: "Save as: ")
                             refreshScreen()
 
                             for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
                                 guard let scalar else { continue }
 
-                                let character = Character(scalar)
-
-                                if character.isNewline && fileName.count > 1 {
+                                if scalar == "\u{1b}" {
+                                    fileName = nil
                                     break
                                 }
+
+                                let character = Character(scalar)
+
+                                if character.isNewline,
+                                   let fileName,
+                                   fileName.count > 1 {
+                                    break
+                                }
+
                                 if !(character.isASCII && character.isLetter) {
                                     continue
                                 }
 
-                                fileName.append(character)
-                                editorConfig.statusMessage = .init(content: "Save as: \(fileName)")
+                                if fileName == nil {
+                                    fileName = ""
+                                }
+                                fileName?.append(character)
+
+                                editorConfig.statusMessage = .init(content: "Save as: \(fileName!)")
                                 refreshScreen()
                             }
 
                             editorConfig.file.path = fileName
                         }
 
-                       try editorConfig.file.save()
-                        editorConfig.statusMessage = .init(content: "Saved")
+                        if (editorConfig.file.path ?? "").isEmpty {
+                            editorConfig.statusMessage = .init(content: "Save aborted")
+                        } else {
+                            try editorConfig.file.save()
+                            editorConfig.statusMessage = .init(content: "Saved")
+                        }
                     } catch {
                         editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
