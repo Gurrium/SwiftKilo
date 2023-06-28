@@ -304,7 +304,7 @@ public class SwiftKilo {
                                 if character.isNewline && fileName.count > 1 {
                                     break
                                 }
-                                if !character.isASCII {
+                                if !(character.isASCII && character.isLetter) {
                                     continue
                                 }
 
