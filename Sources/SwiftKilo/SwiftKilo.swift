@@ -312,14 +312,20 @@ public class SwiftKilo {
                                     break
                                 }
 
-                                if !(character.isASCII && character.isLetter) {
-                                    continue
-                                }
+                                if scalar == .init("h").modified(with: .control),
+                                   let count = fileName?.count,
+                                    count > 0 {
+                                    fileName?.removeLast()
+                                } else {
+                                    if !(character.isASCII && character.isLetter) {
+                                        continue
+                                    }
 
-                                if fileName == nil {
-                                    fileName = ""
+                                    if fileName == nil {
+                                        fileName = ""
+                                    }
+                                    fileName?.append(character)
                                 }
-                                fileName?.append(character)
 
                                 editorConfig.statusMessage = .init(content: "Save as: \(fileName!)")
                                 refreshScreen()
