@@ -29,9 +29,15 @@ struct Interval<Value>: AsyncSequence {
 
 @main
 public class SwiftKilo {
+    struct Position {
+        var x: Int
+        var y: Int
+    }
+
     struct Cursor {
         var x: Int
         var y: Int
+        var position: Position
 
         enum Direction {
             case up
@@ -164,6 +170,10 @@ public class SwiftKilo {
             try rows.map(\.raw).joined(separator: "\r\n").write(to: url, atomically: true, encoding: .utf8)
 
             isDirty = false
+        }
+
+        func find() -> Position {
+            fatalError("not implemented")
         }
     }
 
