@@ -30,13 +30,12 @@ struct Interval<Value>: AsyncSequence {
 @main
 public class SwiftKilo {
     struct Position {
+        static let origin = Position(x: 0, y: 0)
         var x: Int
         var y: Int
     }
 
     struct Cursor {
-        var x: Int
-        var y: Int
         var position: Position
 
         enum Direction {
@@ -49,13 +48,13 @@ public class SwiftKilo {
         mutating func move(_ direction: Direction, distance: Int) {
             switch direction {
             case .up:
-                y = y - distance
+                position.y = position.y - distance
             case .down:
-                y = y + distance
+                position.y = position.y + distance
             case .left:
-                x = x - distance
+                position.x = position.x - distance
             case .right:
-                x = x + distance
+                position.x = position.x + distance
             }
         }
     }
@@ -110,49 +109,49 @@ public class SwiftKilo {
         var isDirty: Bool
 
         var currentRow: Row? {
-            guard cursor.y < rows.count else { return nil }
+            guard cursor.position.y < rows.count else { return nil }
 
-            return rows[cursor.y]
+            return rows[cursor.position.y]
         }
 
         mutating func insertNewLine() {
             let content: String
-            if cursor.y > rows.count {
+            if cursor.position.y > rows.count {
                 content = ""
             } else {
-                content = String(rows[cursor.y].raw.prefix(cursor.x))
-                rows[cursor.y].raw.removeFirst(min(cursor.x, rows[cursor.y].raw.count))
+                content = String(rows[cursor.position.y].raw.prefix(cursor.position.x))
+                rows[cursor.position.y].raw.removeFirst(min(cursor.position.x, rows[cursor.position.y].raw.count))
             }
 
-            rows.insert(.init(raw: content), at: cursor.y)
+            rows.insert(.init(raw: content), at: cursor.position.y)
             cursor.move(.down, distance: 1)
-            cursor.move(.left, distance: cursor.x)
+            cursor.move(.left, distance: cursor.position.x)
 
             isDirty = true
         }
 
         mutating func insert(_ char: Character) {
-            if (cursor.y == rows.count) {
+            if (cursor.position.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
 
-            guard cursor.y < rows.count else { return }
+            guard cursor.position.y < rows.count else { return }
 
-            rows[cursor.y].insert(char, at: cursor.x)
+            rows[cursor.position.y].insert(char, at: cursor.position.x)
             cursor.move(.right, distance: 1)
 
             isDirty = true
         }
 
         mutating func deleteCharacter() {
-            if cursor.x > 0 {
-                rows[cursor.y].remove(at: cursor.x - 1)
+            if cursor.position.x > 0 {
+                rows[cursor.position.y].remove(at: cursor.position.x - 1)
                 cursor.move(.left, distance: 1)
-            } else if cursor.y > 0 {
-                let distance = rows[cursor.y - 1].raw.count
+            } else if cursor.position.y > 0 {
+                let distance = rows[cursor.position.y - 1].raw.count
 
-                rows[cursor.y - 1] = .init(raw: rows[cursor.y - 1].raw + rows[cursor.y].raw)
-                rows.remove(at: cursor.y)
+                rows[cursor.position.y - 1] = .init(raw: rows[cursor.position.y - 1].raw + rows[cursor.position.y].raw)
+                rows.remove(at: cursor.position.y)
 
                 cursor.move(.up, distance: 1)
                 cursor.move(.right, distance: distance)
@@ -226,9 +225,9 @@ public class SwiftKilo {
         guard let (height, width) = getWindowSize() else { return nil }
 
         editorConfig = EditorConfig(
-            screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(x: 0, y: 0)),
+            screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(position: .origin)),
             origTermios: termios(),
-            file: File(path: filePath, rows: [], cursor: Cursor(x: 0, y: 0), isDirty: false),
+            file: File(path: filePath, rows: [], cursor: Cursor(position: .origin), isDirty: false),
             mode: .normal
         )
     }
@@ -252,30 +251,30 @@ public class SwiftKilo {
                 switch action {
                 // cursor
                 case .moveCursorUp:
-                    guard editorConfig.file.cursor.y > 0 else { break }
+                    guard editorConfig.file.cursor.position.y > 0 else { break }
 
                     editorConfig.file.cursor.move(.up, distance: 1)
                 case .moveCursorLeft:
-                    guard editorConfig.file.cursor.x > 0 else { break }
+                    guard editorConfig.file.cursor.position.x > 0 else { break }
 
                     editorConfig.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editorConfig.file.cursor.x < editorConfig.file.currentRow?.raw.count ?? 0 else { break }
+                    guard editorConfig.file.cursor.position.x < editorConfig.file.currentRow?.raw.count ?? 0 else { break }
 
                     editorConfig.file.cursor.move(.right, distance: 1)
                 case .moveCursorDown:
-                    guard editorConfig.file.cursor.y < editorConfig.file.rows.count else { break }
+                    guard editorConfig.file.cursor.position.y < editorConfig.file.rows.count else { break }
 
                     editorConfig.file.cursor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
-                    editorConfig.file.cursor.x = 0
+                    editorConfig.file.cursor.position.x = 0
                 case .moveCursorToEndOfLine:
-                    editorConfig.file.cursor.x = editorConfig.file.currentRow?.raw.count ?? 0
+                    editorConfig.file.cursor.position.x = editorConfig.file.currentRow?.raw.count ?? 0
                 // page
                 case .movePageUp:
-                    editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.y))
+                    editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.position.y))
                 case .movePageDown:
-                    editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.y))
+                    editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.position.y))
                 // text
                 case .delete:
                     editorConfig.file.deleteCharacter()
@@ -362,10 +361,10 @@ public class SwiftKilo {
                     editorConfig.quitTimes = kQuitTimes
                 }
 
-                if editorConfig.file.cursor.y >= editorConfig.file.rows.count {
-                    editorConfig.file.cursor.x = 0
+                if editorConfig.file.cursor.position.y >= editorConfig.file.rows.count {
+                    editorConfig.file.cursor.position.x = 0
                 } else {
-                    editorConfig.file.cursor.x = min(editorConfig.file.cursor.x, editorConfig.file.currentRow?.raw.count ?? 0)
+                    editorConfig.file.cursor.position.x = min(editorConfig.file.cursor.position.x, editorConfig.file.currentRow?.raw.count ?? 0)
                 }
             }
         }
@@ -391,7 +390,7 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func scroll() {
-        editorConfig.screen.cursor.x = editorConfig.file.currentRow?.raw.prefix(editorConfig.file.cursor.x).enumerated().reduce(0) { partialResult, e in
+        editorConfig.screen.cursor.position.x = editorConfig.file.currentRow?.raw.prefix(editorConfig.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
             let (i, char) = e
             let d: Int
 
@@ -402,22 +401,22 @@ public class SwiftKilo {
             }
 
             return partialResult + d
-        } ?? editorConfig.file.cursor.x
+        } ?? editorConfig.file.cursor.position.x
 
-        if editorConfig.file.cursor.y < editorConfig.screen.rowOffset {
-            editorConfig.screen.rowOffset = editorConfig.file.cursor.y
+        if editorConfig.file.cursor.position.y < editorConfig.screen.rowOffset {
+            editorConfig.screen.rowOffset = editorConfig.file.cursor.position.y
         }
 
-        if editorConfig.file.cursor.y >= editorConfig.screen.rowOffset + editorConfig.screen.countOfRows {
-            editorConfig.screen.rowOffset = editorConfig.file.cursor.y - editorConfig.screen.countOfRows + 1
+        if editorConfig.file.cursor.position.y >= editorConfig.screen.rowOffset + editorConfig.screen.countOfRows {
+            editorConfig.screen.rowOffset = editorConfig.file.cursor.position.y - editorConfig.screen.countOfRows + 1
         }
 
-        if editorConfig.file.cursor.x < editorConfig.screen.columnOffset {
-            editorConfig.screen.columnOffset = editorConfig.screen.cursor.x
+        if editorConfig.file.cursor.position.x < editorConfig.screen.columnOffset {
+            editorConfig.screen.columnOffset = editorConfig.screen.cursor.position.x
         }
 
-        if editorConfig.file.cursor.x >= editorConfig.screen.columnOffset + editorConfig.screen.countOfColumns {
-            editorConfig.screen.columnOffset = editorConfig.screen.cursor.x - editorConfig.screen.countOfColumns + 1
+        if editorConfig.file.cursor.position.x >= editorConfig.screen.columnOffset + editorConfig.screen.countOfColumns {
+            editorConfig.screen.columnOffset = editorConfig.screen.cursor.position.x - editorConfig.screen.countOfColumns + 1
         }
     }
 
@@ -435,7 +434,7 @@ public class SwiftKilo {
         buffer.append("\r\n")
         drawMessageBar()
 
-        buffer.append("\u{1b}[\(editorConfig.file.cursor.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.x - editorConfig.screen.columnOffset) + 1)H")
+        buffer.append("\u{1b}[\(editorConfig.file.cursor.position.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.position.x - editorConfig.screen.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
@@ -478,7 +477,7 @@ public class SwiftKilo {
         buffer.append("\u{1b}[7m")
 
         let lstatus = "\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines \(editorConfig.file.isDirty ? "(modified)" : "")"
-        let rstatus = "\(editorConfig.file.cursor.y + 1)/\(editorConfig.file.rows.count)"
+        let rstatus = "\(editorConfig.file.cursor.position.y + 1)/\(editorConfig.file.rows.count)"
 
         if lstatus.count + rstatus.count <= editorConfig.screen.countOfColumns {
             buffer.append(([lstatus] + Array(repeating: " ", count: editorConfig.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
