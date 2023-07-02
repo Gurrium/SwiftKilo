@@ -171,8 +171,16 @@ public class SwiftKilo {
             isDirty = false
         }
 
-        func find() -> Position {
-            fatalError("not implemented")
+        func find(for str: String) -> Position? {
+            for (y, row) in rows.enumerated() {
+                guard let range = row.raw.range(of: str) else { continue }
+
+                let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
+
+                return Position(x: x, y: y)
+            }
+
+            return nil
         }
     }
 
