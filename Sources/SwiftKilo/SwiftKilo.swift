@@ -360,6 +360,10 @@ public class SwiftKilo {
                     } catch {
                         editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
+                case .find:
+                    // TODO: 保存時にファイル名を取る処理を一般化して検索する文字列を手に入れる
+                    let position = editorConfig.file.find(for: "TODO")
+                    // TODO: カーソルを動かす
                 }
 
                 switch action {
@@ -586,4 +590,5 @@ enum EditorAction {
     case changeModeToInput
     case changeModeToNormal
     case save
+    case find
 }
