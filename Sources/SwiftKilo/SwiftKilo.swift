@@ -309,49 +309,10 @@ public class SwiftKilo {
                 case .save:
                     do {
                         if (editorConfig.file.path ?? "").isEmpty {
-                            var fileName: String? = nil
-                            editorConfig.statusMessage = .init(content: "Save as: ")
-                            refreshScreen()
-
-                            for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
-                                guard let scalar else { continue }
-
-                                if scalar == "\u{1b}" {
-                                    fileName = nil
-                                    break
-                                }
-
-                                let character = Character(scalar)
-
-                                if character.isNewline,
-                                   let fileName,
-                                   fileName.count > 1 {
-                                    break
-                                }
-
-                                if scalar == .init("h").modified(with: .control),
-                                   let count = fileName?.count,
-                                    count > 0 {
-                                    fileName?.removeLast()
-                                } else {
-                                    if !(character.isASCII && character.isLetter) {
-                                        continue
-                                    }
-
-                                    if fileName == nil {
-                                        fileName = ""
-                                    }
-                                    fileName?.append(character)
-                                }
-
-                                editorConfig.statusMessage = .init(content: "Save as: \(fileName!)")
-                                refreshScreen()
-                            }
-
-                            editorConfig.file.path = fileName
+                            editorConfig.file.path = try await prompt { "Save as: \($0)" }
                         }
 
-                        if (editorConfig.file.path ?? "").isEmpty {
+                        if editorConfig.file.path == nil {
                             editorConfig.statusMessage = .init(content: "Save aborted")
                         } else {
                             try editorConfig.file.save()
@@ -361,8 +322,9 @@ public class SwiftKilo {
                         editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
-                    // TODO: 保存時にファイル名を取る処理を一般化して検索する文字列を手に入れる
-                    let position = editorConfig.file.find(for: "TODO")
+                    guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
+
+                    let position = editorConfig.file.find(for: target)
                     // TODO: カーソルを動かす
                 }
 
@@ -380,6 +342,42 @@ public class SwiftKilo {
                 }
             }
         }
+    }
+
+    // TODO: 一般化する
+    // MARK: prompt
+
+    private func prompt(statusMessageBuilder: (String) -> String) async throws -> String? {
+        var partialResult = ""
+        editorConfig.statusMessage = .init(content: statusMessageBuilder(partialResult))
+        refreshScreen()
+
+        for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
+            guard let scalar else { continue }
+
+            if scalar == "\u{1b}" {
+                return nil
+            }
+
+            let character = Character(scalar)
+
+            if character.isNewline,
+               partialResult.count > 1 {
+                return partialResult
+            }
+
+            if scalar == .init("h").modified(with: .control),
+               partialResult.count > 0 {
+                partialResult.removeLast()
+            } else {
+                partialResult.append(character)
+            }
+
+            editorConfig.statusMessage = .init(content: statusMessageBuilder(partialResult))
+            refreshScreen()
+        }
+
+        return partialResult
     }
 
     // MARK: file i/o
