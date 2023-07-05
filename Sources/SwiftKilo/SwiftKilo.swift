@@ -57,6 +57,10 @@ public class SwiftKilo {
                 position.x = position.x + distance
             }
         }
+
+        mutating func move(to position: Position) {
+            self.position = position
+        }
     }
 
     struct File {
@@ -324,8 +328,9 @@ public class SwiftKilo {
                 case .find:
                     guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
 
-                    let position = editorConfig.file.find(for: target)
-                    // TODO: カーソルを動かす
+                    if let position = editorConfig.file.find(for: target) {
+                        editorConfig.file.cursor.move(to: position)
+                    }
                 }
 
                 switch action {
