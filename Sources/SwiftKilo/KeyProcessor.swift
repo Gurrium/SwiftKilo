@@ -50,7 +50,7 @@ final class KeyProcessor {
             action = .changeModeToInput
         case [.init("s").modified(with: .control)]:
             action = .save
-        case ["/"]:
+        case [.init("f").modified(with: .control)]:
             action = .find
         default:
             action = nil

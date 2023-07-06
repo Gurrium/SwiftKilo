@@ -253,7 +253,7 @@ public class SwiftKilo {
 
         try openEditor()
 
-        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit")
+        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
