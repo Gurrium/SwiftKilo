@@ -227,7 +227,7 @@ public class SwiftKilo {
     }
 
     private let fileHandle: FileHandle
-    private var editorConfig: EditorConfig!
+    private var editor: EditorConfig!
     private var buffer = ""
     private var keyProcessor = KeyProcessor()
 
@@ -236,7 +236,7 @@ public class SwiftKilo {
 
         guard let (height, width) = getWindowSize() else { return nil }
 
-        editorConfig = EditorConfig(
+        editor = EditorConfig(
             screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(position: .origin)),
             origTermios: termios(),
             file: File(path: filePath, rows: [], cursor: Cursor(position: .origin), isDirty: false),
@@ -253,52 +253,52 @@ public class SwiftKilo {
 
         try openEditor()
 
-        editorConfig.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
+        editor.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
             refreshScreen()
 
             if let scalar,
-               let action = keyProcessor.process(scalar, mode: editorConfig.mode) {
+               let action = keyProcessor.process(scalar, mode: editor.mode) {
                 switch action {
                 // cursor
                 case .moveCursorUp:
-                    guard editorConfig.file.cursor.position.y > 0 else { break }
+                    guard editor.file.cursor.position.y > 0 else { break }
 
-                    editorConfig.file.cursor.move(.up, distance: 1)
+                    editor.file.cursor.move(.up, distance: 1)
                 case .moveCursorLeft:
-                    guard editorConfig.file.cursor.position.x > 0 else { break }
+                    guard editor.file.cursor.position.x > 0 else { break }
 
-                    editorConfig.file.cursor.move(.left, distance: 1)
+                    editor.file.cursor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editorConfig.file.cursor.position.x < editorConfig.file.currentRow?.raw.count ?? 0 else { break }
+                    guard editor.file.cursor.position.x < editor.file.currentRow?.raw.count ?? 0 else { break }
 
-                    editorConfig.file.cursor.move(.right, distance: 1)
+                    editor.file.cursor.move(.right, distance: 1)
                 case .moveCursorDown:
-                    guard editorConfig.file.cursor.position.y < editorConfig.file.rows.count else { break }
+                    guard editor.file.cursor.position.y < editor.file.rows.count else { break }
 
-                    editorConfig.file.cursor.move(.down, distance: 1)
+                    editor.file.cursor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
-                    editorConfig.file.cursor.position.x = 0
+                    editor.file.cursor.position.x = 0
                 case .moveCursorToEndOfLine:
-                    editorConfig.file.cursor.position.x = editorConfig.file.currentRow?.raw.count ?? 0
+                    editor.file.cursor.position.x = editor.file.currentRow?.raw.count ?? 0
                 // page
                 case .movePageUp:
-                    editorConfig.file.cursor.move(.up, distance: min(editorConfig.screen.countOfRows, editorConfig.file.cursor.position.y))
+                    editor.file.cursor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
                 case .movePageDown:
-                    editorConfig.file.cursor.move(.down, distance: min(editorConfig.screen.countOfRows, editorConfig.file.rows.count - editorConfig.file.cursor.position.y))
+                    editor.file.cursor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.file.cursor.position.y))
                 // text
                 case .delete:
-                    editorConfig.file.deleteCharacter()
+                    editor.file.deleteCharacter()
                 case .newLine:
-                    editorConfig.file.insertNewLine()
+                    editor.file.insertNewLine()
                 case .insert(let scalar):
-                    editorConfig.file.insert(Character.init(scalar))
+                    editor.file.insert(Character.init(scalar))
                 // editor
                 case .quit:
-                    if editorConfig.file.isDirty && editorConfig.quitTimes > 0 {
-                        editorConfig.statusMessage = .init(content: "WARNING!!! File has unsaved changes. Press Ctrl-Q \(editorConfig.quitTimes) more times to quit.")
-                        editorConfig.quitTimes -= 1
+                    if editor.file.isDirty && editor.quitTimes > 0 {
+                        editor.statusMessage = .init(content: "WARNING!!! File has unsaved changes. Press Ctrl-Q \(editor.quitTimes) more times to quit.")
+                        editor.quitTimes -= 1
 
                         break
                     }
@@ -307,29 +307,29 @@ public class SwiftKilo {
 
                     return
                 case .changeModeToInput:
-                    editorConfig.mode = .insert
+                    editor.mode = .insert
                 case .changeModeToNormal:
-                    editorConfig.mode = .normal
+                    editor.mode = .normal
                 case .save:
                     do {
-                        if (editorConfig.file.path ?? "").isEmpty {
-                            editorConfig.file.path = try await prompt { "Save as: \($0)" }
+                        if (editor.file.path ?? "").isEmpty {
+                            editor.file.path = try await prompt { "Save as: \($0)" }
                         }
 
-                        if editorConfig.file.path == nil {
-                            editorConfig.statusMessage = .init(content: "Save aborted")
+                        if editor.file.path == nil {
+                            editor.statusMessage = .init(content: "Save aborted")
                         } else {
-                            try editorConfig.file.save()
-                            editorConfig.statusMessage = .init(content: "Saved")
+                            try editor.file.save()
+                            editor.statusMessage = .init(content: "Saved")
                         }
                     } catch {
-                        editorConfig.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
+                        editor.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
                     guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
 
-                    if let position = editorConfig.file.find(for: target) {
-                        editorConfig.file.cursor.move(to: position)
+                    if let position = editor.file.find(for: target) {
+                        editor.file.cursor.move(to: position)
                     }
                 }
 
@@ -337,13 +337,13 @@ public class SwiftKilo {
                 case .quit:
                     break
                 default:
-                    editorConfig.quitTimes = kQuitTimes
+                    editor.quitTimes = kQuitTimes
                 }
 
-                if editorConfig.file.cursor.position.y >= editorConfig.file.rows.count {
-                    editorConfig.file.cursor.position.x = 0
+                if editor.file.cursor.position.y >= editor.file.rows.count {
+                    editor.file.cursor.position.x = 0
                 } else {
-                    editorConfig.file.cursor.position.x = min(editorConfig.file.cursor.position.x, editorConfig.file.currentRow?.raw.count ?? 0)
+                    editor.file.cursor.position.x = min(editor.file.cursor.position.x, editor.file.currentRow?.raw.count ?? 0)
                 }
             }
         }
@@ -354,7 +354,7 @@ public class SwiftKilo {
 
     private func prompt(statusMessageBuilder: (String) -> String) async throws -> String? {
         var partialResult = ""
-        editorConfig.statusMessage = .init(content: statusMessageBuilder(partialResult))
+        editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
         refreshScreen()
 
         for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
@@ -378,7 +378,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            editorConfig.statusMessage = .init(content: statusMessageBuilder(partialResult))
+            editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
             refreshScreen()
         }
 
@@ -389,7 +389,7 @@ public class SwiftKilo {
 
     private func openEditor() throws {
         let rows: [File.Row]
-        if let filePath = editorConfig.file.path,
+        if let filePath = editor.file.path,
            let data = FileManager.default.contents(atPath: filePath),
            let contents = String(data: data, encoding: .utf8) {
             rows = contents.split(whereSeparator: \.isNewline).map { line in
@@ -399,13 +399,13 @@ public class SwiftKilo {
             rows = []
         }
 
-        editorConfig.file.rows = rows
+        editor.file.rows = rows
     }
 
     // MARK: rendering
 
     private func scroll() {
-        editorConfig.screen.cursor.position.x = editorConfig.file.currentRow?.raw.prefix(editorConfig.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
+        editor.screen.cursor.position.x = editor.file.currentRow?.raw.prefix(editor.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
             let (i, char) = e
             let d: Int
 
@@ -416,22 +416,22 @@ public class SwiftKilo {
             }
 
             return partialResult + d
-        } ?? editorConfig.file.cursor.position.x
+        } ?? editor.file.cursor.position.x
 
-        if editorConfig.file.cursor.position.y < editorConfig.screen.rowOffset {
-            editorConfig.screen.rowOffset = editorConfig.file.cursor.position.y
+        if editor.file.cursor.position.y < editor.screen.rowOffset {
+            editor.screen.rowOffset = editor.file.cursor.position.y
         }
 
-        if editorConfig.file.cursor.position.y >= editorConfig.screen.rowOffset + editorConfig.screen.countOfRows {
-            editorConfig.screen.rowOffset = editorConfig.file.cursor.position.y - editorConfig.screen.countOfRows + 1
+        if editor.file.cursor.position.y >= editor.screen.rowOffset + editor.screen.countOfRows {
+            editor.screen.rowOffset = editor.file.cursor.position.y - editor.screen.countOfRows + 1
         }
 
-        if editorConfig.file.cursor.position.x < editorConfig.screen.columnOffset {
-            editorConfig.screen.columnOffset = editorConfig.screen.cursor.position.x
+        if editor.file.cursor.position.x < editor.screen.columnOffset {
+            editor.screen.columnOffset = editor.screen.cursor.position.x
         }
 
-        if editorConfig.file.cursor.position.x >= editorConfig.screen.columnOffset + editorConfig.screen.countOfColumns {
-            editorConfig.screen.columnOffset = editorConfig.screen.cursor.position.x - editorConfig.screen.countOfColumns + 1
+        if editor.file.cursor.position.x >= editor.screen.columnOffset + editor.screen.countOfColumns {
+            editor.screen.columnOffset = editor.screen.cursor.position.x - editor.screen.countOfColumns + 1
         }
     }
 
@@ -449,7 +449,7 @@ public class SwiftKilo {
         buffer.append("\r\n")
         drawMessageBar()
 
-        buffer.append("\u{1b}[\(editorConfig.file.cursor.position.y - editorConfig.screen.rowOffset + 1);\((editorConfig.screen.cursor.position.x - editorConfig.screen.columnOffset) + 1)H")
+        buffer.append("\u{1b}[\(editor.file.cursor.position.y - editor.screen.rowOffset + 1);\((editor.screen.cursor.position.x - editor.screen.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
@@ -457,14 +457,14 @@ public class SwiftKilo {
     }
 
     private func drawRows() {
-        for y in (0..<editorConfig.screen.countOfRows) {
-            let fileRow = y + editorConfig.screen.rowOffset
+        for y in (0..<editor.screen.countOfRows) {
+            let fileRow = y + editor.screen.rowOffset
 
-            if (fileRow >= editorConfig.file.rows.count) {
-                if editorConfig.file.rows.count == 0 && y == editorConfig.screen.countOfRows / 3 {
-                    var message = String("SwiftKilo editor -- version \(kVersionString)".prefix(editorConfig.screen.countOfColumns))
+            if (fileRow >= editor.file.rows.count) {
+                if editor.file.rows.count == 0 && y == editor.screen.countOfRows / 3 {
+                    var message = String("SwiftKilo editor -- version \(kVersionString)".prefix(editor.screen.countOfColumns))
 
-                    var padding = (editorConfig.screen.countOfColumns - message.count) / 2
+                    var padding = (editor.screen.countOfColumns - message.count) / 2
                     if padding > 0 {
                         buffer.append("~")
                         padding -= 1
@@ -477,12 +477,12 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editorConfig.file.rows[fileRow].cooked.dropFirst(editorConfig.screen.columnOffset).prefix(editorConfig.screen.countOfColumns)))
+                buffer.append(String(editor.file.rows[fileRow].cooked.dropFirst(editor.screen.columnOffset).prefix(editor.screen.countOfColumns)))
             }
 
             buffer.append("\u{1b}[K")
 
-            if y < editorConfig.screen.countOfRows - 1 {
+            if y < editor.screen.countOfRows - 1 {
                 buffer.append("\r\n")
             }
         }
@@ -491,13 +491,13 @@ public class SwiftKilo {
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
 
-        let lstatus = "\(editorConfig.file.path?.prefix(20) ?? "[No Name]") - \(editorConfig.file.rows.count) lines \(editorConfig.file.isDirty ? "(modified)" : "")"
-        let rstatus = "\(editorConfig.file.cursor.position.y + 1)/\(editorConfig.file.rows.count)"
+        let lstatus = "\(editor.file.path?.prefix(20) ?? "[No Name]") - \(editor.file.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
+        let rstatus = "\(editor.file.cursor.position.y + 1)/\(editor.file.rows.count)"
 
-        if lstatus.count + rstatus.count <= editorConfig.screen.countOfColumns {
-            buffer.append(([lstatus] + Array(repeating: " ", count: editorConfig.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
+        if lstatus.count + rstatus.count <= editor.screen.countOfColumns {
+            buffer.append(([lstatus] + Array(repeating: " ", count: editor.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
         } else {
-            buffer.append(lstatus.padding(toLength: editorConfig.screen.countOfColumns, withPad: " ", startingAt: 0))
+            buffer.append(lstatus.padding(toLength: editor.screen.countOfColumns, withPad: " ", startingAt: 0))
         }
         buffer.append("\u{1b}[m")
     }
@@ -505,10 +505,10 @@ public class SwiftKilo {
     private func drawMessageBar() {
         buffer.append("\u{1b}[K")
 
-        guard let statusMessage = editorConfig.statusMessage,
+        guard let statusMessage = editor.statusMessage,
               statusMessage.didSetAt.distance(to: Date()) < 5 else { return }
 
-        buffer.append(String(statusMessage.content.prefix(editorConfig.screen.countOfColumns)))
+        buffer.append(String(statusMessage.content.prefix(editor.screen.countOfColumns)))
     }
 
     private func getWindowSize() -> (height: Int, width: Int)? {
@@ -520,9 +520,9 @@ public class SwiftKilo {
     }
 
     private func enableRawMode() {
-        tcgetattr(STDIN_FILENO, &editorConfig.origTermios)
+        tcgetattr(STDIN_FILENO, &editor.origTermios)
 
-        var new = editorConfig.origTermios
+        var new = editor.origTermios
         new.c_iflag &= ~tcflag_t(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
         new.c_oflag &= ~tcflag_t(OPOST)
         new.c_cflag |= tcflag_t(CS8)
@@ -532,7 +532,7 @@ public class SwiftKilo {
     }
 
     private func disableRawMode() {
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &editorConfig.origTermios)
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor.origTermios)
     }
 }
 
