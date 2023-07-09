@@ -357,9 +357,7 @@ public class SwiftKilo {
         editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
         refreshScreen()
 
-        for try await scalar in merge(fileHandle.bytes.unicodeScalars.map({ (element: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element) -> AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.Element? in element }), Interval(value: nil)) {
-            guard let scalar else { continue }
-
+        for try await scalar in fileHandle.bytes.unicodeScalars {
             if scalar == "\u{1b}" {
                 return nil
             }
