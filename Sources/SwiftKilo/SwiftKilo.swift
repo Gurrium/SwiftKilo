@@ -357,6 +357,11 @@ public class SwiftKilo {
         editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
         refreshScreen()
 
+        defer {
+            editor.statusMessage = .init(content: "")
+            refreshScreen()
+        }
+
         for try await scalar in fileHandle.bytes.unicodeScalars {
             if scalar == "\u{1b}" {
                 return nil
