@@ -353,6 +353,47 @@ public class SwiftKilo {
     // MARK: prompt
 
     private func prompt(statusMessageBuilder: (String) -> String) async throws -> String? {
+        struct Hoge: AsyncSequence, AsyncIteratorProtocol {
+            typealias Element = String
+
+            let fileHandle: FileHandle
+            var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
+            var partialResult = ""
+
+            init(fileHandle: FileHandle) {
+                self.fileHandle = fileHandle
+                unicodeScalarsIterator = fileHandle.bytes.unicodeScalars.makeAsyncIterator()
+            }
+
+            func makeAsyncIterator() -> Hoge {
+                self
+            }
+
+            mutating func next() async throws -> String? {
+                guard let scalar = try await unicodeScalarsIterator.next() else { return nil }
+
+                if scalar == "\u{1b}" {
+                    return nil
+                }
+
+                let character = Character(scalar)
+
+                if character.isNewline,
+                   partialResult.count > 1 {
+                    return partialResult
+                }
+
+                if scalar == .init("h").modified(with: .control),
+                   partialResult.count > 0 {
+                    partialResult.removeLast()
+                } else {
+                    partialResult.append(character)
+                }
+
+                return partialResult
+            }
+        }
+
         var partialResult = ""
         editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
         refreshScreen()
