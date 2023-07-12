@@ -313,7 +313,10 @@ public class SwiftKilo {
                 case .save:
                     do {
                         if (editor.file.path ?? "").isEmpty {
-                            editor.file.path = try await prompt { "Save as: \($0)" }
+                            editor.statusMessage = .init(content: "Save sa: ")
+                            for try await filePath in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                                editor.file.path = filePath
+                            }
                         }
 
                         if editor.file.path == nil {
@@ -326,11 +329,13 @@ public class SwiftKilo {
                         editor.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
-                    guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
-
-                    if let position = editor.file.find(for: target) {
-                        editor.file.cursor.move(to: position)
-                    }
+                    break
+                    // TODO: incremental search
+//                    guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
+//
+//                    if let position = editor.file.find(for: target) {
+//                        editor.file.cursor.move(to: position)
+//                    }
                 }
 
                 switch action {
@@ -352,58 +357,25 @@ public class SwiftKilo {
     // TODO: 一般化する
     // MARK: prompt
 
-    private func prompt(statusMessageBuilder: (String) -> String) async throws -> String? {
-        struct Hoge: AsyncSequence, AsyncIteratorProtocol {
-            typealias Element = String
+    struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
+        typealias Element = String
 
-            let fileHandle: FileHandle
-            var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
-            var partialResult = ""
+        private let fileHandle: FileHandle
+        private var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
+        private var partialResult = ""
 
-            init(fileHandle: FileHandle) {
-                self.fileHandle = fileHandle
-                unicodeScalarsIterator = fileHandle.bytes.unicodeScalars.makeAsyncIterator()
-            }
-
-            func makeAsyncIterator() -> Hoge {
-                self
-            }
-
-            mutating func next() async throws -> String? {
-                guard let scalar = try await unicodeScalarsIterator.next() else { return nil }
-
-                if scalar == "\u{1b}" {
-                    return nil
-                }
-
-                let character = Character(scalar)
-
-                if character.isNewline,
-                   partialResult.count > 1 {
-                    return partialResult
-                }
-
-                if scalar == .init("h").modified(with: .control),
-                   partialResult.count > 0 {
-                    partialResult.removeLast()
-                } else {
-                    partialResult.append(character)
-                }
-
-                return partialResult
-            }
+        init(fileHandle: FileHandle) {
+            self.fileHandle = fileHandle
+            unicodeScalarsIterator = fileHandle.bytes.unicodeScalars.makeAsyncIterator()
         }
 
-        var partialResult = ""
-        editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
-        refreshScreen()
-
-        defer {
-            editor.statusMessage = .init(content: "")
-            refreshScreen()
+        func makeAsyncIterator() -> AsyncPromptInputSequence {
+            self
         }
 
-        for try await scalar in fileHandle.bytes.unicodeScalars {
+        mutating func next() async throws -> String? {
+            guard let scalar = try await unicodeScalarsIterator.next() else { return nil }
+
             if scalar == "\u{1b}" {
                 return nil
             }
@@ -422,11 +394,8 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            editor.statusMessage = .init(content: statusMessageBuilder(partialResult))
-            refreshScreen()
+            return partialResult
         }
-
-        return partialResult
     }
 
     // MARK: file i/o
