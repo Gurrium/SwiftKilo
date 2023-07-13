@@ -314,9 +314,21 @@ public class SwiftKilo {
                     do {
                         if (editor.file.path ?? "").isEmpty {
                             editor.statusMessage = .init(content: "Save sa: ")
-                            for try await filePath in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                            refreshScreen()
+                            // FIXME: 決定とキャンセルを区別できなくなったので直す
+                            for try await (filePath, isTerminated) in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                                guard !isTerminated else {
+                                    editor.file.path = nil
+                                    break
+                                }
+
                                 editor.file.path = filePath
+                                editor.statusMessage = .init(content: "Save as: \(filePath)")
+                                refreshScreen()
                             }
+
+                            editor.statusMessage = .init(content: "")
+                            refreshScreen()
                         }
 
                         if editor.file.path == nil {
@@ -358,7 +370,7 @@ public class SwiftKilo {
     // MARK: prompt
 
     struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
-        typealias Element = String
+        typealias Element = (String?, Bool)
 
         private let fileHandle: FileHandle
         private var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
@@ -373,18 +385,18 @@ public class SwiftKilo {
             self
         }
 
-        mutating func next() async throws -> String? {
+        mutating func next() async throws -> (String?, Bool)? {
             guard let scalar = try await unicodeScalarsIterator.next() else { return nil }
 
             if scalar == "\u{1b}" {
-                return nil
+                return (nil, true)
             }
 
             let character = Character(scalar)
 
             if character.isNewline,
                partialResult.count > 1 {
-                return partialResult
+                return (partialResult, false)
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -394,7 +406,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            return partialResult
+            return (partialResult, false)
         }
     }
 
