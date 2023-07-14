@@ -317,7 +317,7 @@ public class SwiftKilo {
                             refreshScreen()
                             // FIXME: 決定とキャンセルを区別できなくなったので直す
                             for try await (filePath, isTerminated) in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                                guard !isTerminated else {
+                                guard !isTerminated, let filePath else {
                                     editor.file.path = nil
                                     break
                                 }
