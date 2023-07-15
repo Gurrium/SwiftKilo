@@ -317,17 +317,13 @@ public class SwiftKilo {
                             refreshScreen()
 
                             // FIXME: 決定とキャンセルを区別できなくなったので直す
-                        forAwait: for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                                switch input {
-                                case .content(let filePath):
-                                    editor.file.path = filePath
-                                    editor.statusMessage = .init(content: "Save as: \(filePath)")
+                            for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                                if input.isValid {
+                                    editor.file.path = input.content
+                                    editor.statusMessage = .init(content: "Save as: \(input.content)")
                                     refreshScreen()
-                                case .submission:
-                                    break forAwait
-                                case .termination:
+                                } else {
                                     editor.file.path = nil
-                                    break forAwait
                                 }
                             }
 
@@ -374,16 +370,16 @@ public class SwiftKilo {
     // MARK: prompt
 
     struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
-        enum PromptInput {
-            case content(String)
-            case submission
-            case termination
+        struct PromptInput {
+            let content: String
+            let isValid: Bool
         }
         typealias Element = PromptInput
 
         private let fileHandle: FileHandle
         private var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
         private var partialResult = ""
+        private var isTerminated = false
 
         init(fileHandle: FileHandle) {
             self.fileHandle = fileHandle
@@ -395,19 +391,21 @@ public class SwiftKilo {
         }
 
         mutating func next() async throws -> PromptInput? {
-            guard let scalar = try await unicodeScalarsIterator.next() else {
-                return .termination
-            }
+            guard !isTerminated else { return nil }
 
-            if scalar == "\u{1b}" {
-                return .termination
+            guard let scalar = try await unicodeScalarsIterator.next(),
+                  scalar != "\u{1b}"
+            else {
+                isTerminated = true
+                return PromptInput(content: partialResult, isValid: false)
             }
 
             let character = Character(scalar)
 
             if character.isNewline,
                partialResult.count > 1 {
-                return .submission
+                isTerminated = true
+                return PromptInput(content: partialResult, isValid: true)
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -417,7 +415,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            return .content(partialResult)
+            return PromptInput(content: partialResult, isValid: true)
         }
     }
 
