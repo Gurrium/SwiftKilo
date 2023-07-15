@@ -315,16 +315,20 @@ public class SwiftKilo {
                         if (editor.file.path ?? "").isEmpty {
                             editor.statusMessage = .init(content: "Save sa: ")
                             refreshScreen()
-                            // FIXME: 決定とキャンセルを区別できなくなったので直す
-                            for try await (filePath, isTerminated) in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                                guard !isTerminated, let filePath else {
-                                    editor.file.path = nil
-                                    break
-                                }
 
-                                editor.file.path = filePath
-                                editor.statusMessage = .init(content: "Save as: \(filePath)")
-                                refreshScreen()
+                            // FIXME: 決定とキャンセルを区別できなくなったので直す
+                        forAwait: for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                                switch input {
+                                case .content(let filePath):
+                                    editor.file.path = filePath
+                                    editor.statusMessage = .init(content: "Save as: \(filePath)")
+                                    refreshScreen()
+                                case .submission:
+                                    break forAwait
+                                case .termination:
+                                    editor.file.path = nil
+                                    break forAwait
+                                }
                             }
 
                             editor.statusMessage = .init(content: "")
@@ -370,7 +374,12 @@ public class SwiftKilo {
     // MARK: prompt
 
     struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
-        typealias Element = (String?, Bool)
+        enum PromptInput {
+            case content(String)
+            case submission
+            case termination
+        }
+        typealias Element = PromptInput
 
         private let fileHandle: FileHandle
         private var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
@@ -385,18 +394,20 @@ public class SwiftKilo {
             self
         }
 
-        mutating func next() async throws -> (String?, Bool)? {
-            guard let scalar = try await unicodeScalarsIterator.next() else { return nil }
+        mutating func next() async throws -> PromptInput? {
+            guard let scalar = try await unicodeScalarsIterator.next() else {
+                return .termination
+            }
 
             if scalar == "\u{1b}" {
-                return (nil, true)
+                return .termination
             }
 
             let character = Character(scalar)
 
             if character.isNewline,
                partialResult.count > 1 {
-                return (partialResult, false)
+                return .submission
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -406,7 +417,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            return (partialResult, false)
+            return .content(partialResult)
         }
     }
 
