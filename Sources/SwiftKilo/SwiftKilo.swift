@@ -313,10 +313,9 @@ public class SwiftKilo {
                 case .save:
                     do {
                         if (editor.file.path ?? "").isEmpty {
-                            editor.statusMessage = .init(content: "Save sa: ")
+                            editor.statusMessage = .init(content: "Save as:")
                             refreshScreen()
 
-                            // FIXME: 決定とキャンセルを区別できなくなったので直す
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                                 if input.isValid {
                                     editor.file.path = input.content
