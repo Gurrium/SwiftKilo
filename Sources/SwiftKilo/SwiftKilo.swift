@@ -340,13 +340,21 @@ public class SwiftKilo {
                         editor.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
-                    break
-                    // TODO: incremental search
-//                    guard let target = try? await prompt(statusMessageBuilder: { "Search: \($0)" }) else { break }
-//
-//                    if let position = editor.file.find(for: target) {
-//                        editor.file.cursor.move(to: position)
-//                    }
+                    editor.statusMessage = .init(content: "Search:")
+                    refreshScreen()
+
+                    for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                        guard input.isValid else { break }
+
+                        editor.statusMessage = .init(content: "Search: \(input.content)")
+                        if let position = editor.file.find(for: input.content) {
+                            editor.file.cursor.move(to: position)
+                        }
+                        refreshScreen()
+                    }
+
+                    editor.statusMessage = .init(content: "")
+                    refreshScreen()
                 }
 
                 switch action {
