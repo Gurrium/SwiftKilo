@@ -340,6 +340,9 @@ public class SwiftKilo {
                         editor.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
+                    let previousCursorPosition = editor.file.cursor.position
+                    var didFind = false
+
                     editor.statusMessage = .init(content: "Search:")
                     refreshScreen()
 
@@ -349,12 +352,19 @@ public class SwiftKilo {
                         editor.statusMessage = .init(content: "Search: \(input.content)")
                         if let position = editor.file.find(for: input.content) {
                             editor.file.cursor.move(to: position)
+                            didFind = true
+                        } else {
+                            didFind = false
                         }
                         refreshScreen()
                     }
 
                     editor.statusMessage = .init(content: "")
                     refreshScreen()
+
+                    if !didFind {
+                        editor.file.cursor.move(to: previousCursorPosition)
+                    }
                 }
 
                 switch action {
