@@ -317,9 +317,11 @@ public class SwiftKilo {
                             refreshScreen()
 
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                                if input.isValid {
-                                    editor.file.path = input.content
-                                    editor.statusMessage = .init(content: "Save as: \(input.content)")
+                                guard case .content(let content, let isValid) = input else { break }
+
+                                if isValid {
+                                    editor.file.path = content
+                                    editor.statusMessage = .init(content: "Save as: \(content)")
                                     refreshScreen()
                                 } else {
                                     editor.file.path = nil
@@ -347,10 +349,11 @@ public class SwiftKilo {
                     refreshScreen()
 
                     for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                        guard input.isValid else { break }
+                        guard case .content(let content, let isValid) = input else { break }
+                        guard isValid else { break }
 
-                        editor.statusMessage = .init(content: "Search: \(input.content)")
-                        if let position = editor.file.find(for: input.content) {
+                        editor.statusMessage = .init(content: "Search: \(content)")
+                        if let position = editor.file.find(for: content) {
                             editor.file.cursor.move(to: position)
                             didFind = true
                         } else {
@@ -387,9 +390,8 @@ public class SwiftKilo {
     // MARK: prompt
 
     struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
-        struct PromptInput {
-            let content: String
-            let isValid: Bool
+        enum PromptInput {
+            case content(String, isValid: Bool)
         }
         typealias Element = PromptInput
 
@@ -414,7 +416,7 @@ public class SwiftKilo {
                   scalar != "\u{1b}"
             else {
                 isTerminated = true
-                return PromptInput(content: partialResult, isValid: false)
+                return .content(partialResult, isValid: false)
             }
 
             let character = Character(scalar)
@@ -422,7 +424,7 @@ public class SwiftKilo {
             if character.isNewline,
                partialResult.count > 1 {
                 isTerminated = true
-                return PromptInput(content: partialResult, isValid: true)
+                return .content(partialResult, isValid: true)
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -432,7 +434,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            return PromptInput(content: partialResult, isValid: true)
+            return .content(partialResult, isValid: true)
         }
     }
 
