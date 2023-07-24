@@ -317,13 +317,12 @@ public class SwiftKilo {
                             refreshScreen()
 
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                                guard case .content(let content, let isValid) = input else { break }
-
-                                if isValid {
+                                switch input {
+                                case .content(let content), .submit(let content):
                                     editor.file.path = content
                                     editor.statusMessage = .init(content: "Save as: \(content)")
                                     refreshScreen()
-                                } else {
+                                case .terminate:
                                     editor.file.path = nil
                                 }
                             }
@@ -348,18 +347,20 @@ public class SwiftKilo {
                     editor.statusMessage = .init(content: "Search:")
                     refreshScreen()
 
-                    for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
-                        guard case .content(let content, let isValid) = input else { break }
-                        guard isValid else { break }
-
-                        editor.statusMessage = .init(content: "Search: \(content)")
-                        if let position = editor.file.find(for: content) {
-                            editor.file.cursor.move(to: position)
-                            didFind = true
-                        } else {
-                            didFind = false
+                    awaitInput: for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
+                        switch input {
+                        case .content(let content), .submit(let content):
+                            editor.statusMessage = .init(content: "Search: \(content)")
+                            refreshScreen()
+                            if let position = editor.file.find(for: content) {
+                                editor.file.cursor.move(to: position)
+                                didFind = true
+                            } else {
+                                didFind = false
+                            }
+                        case .terminate:
+                            break awaitInput
                         }
-                        refreshScreen()
                     }
 
                     editor.statusMessage = .init(content: "")
@@ -391,7 +392,9 @@ public class SwiftKilo {
 
     struct AsyncPromptInputSequence: AsyncSequence, AsyncIteratorProtocol {
         enum PromptInput {
-            case content(String, isValid: Bool)
+            case content(String)
+            case terminate
+            case submit(String)
         }
         typealias Element = PromptInput
 
@@ -416,7 +419,7 @@ public class SwiftKilo {
                   scalar != "\u{1b}"
             else {
                 isTerminated = true
-                return .content(partialResult, isValid: false)
+                return .terminate
             }
 
             let character = Character(scalar)
@@ -424,7 +427,7 @@ public class SwiftKilo {
             if character.isNewline,
                partialResult.count > 1 {
                 isTerminated = true
-                return .content(partialResult, isValid: true)
+                return .submit(partialResult)
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -434,7 +437,7 @@ public class SwiftKilo {
                 partialResult.append(character)
             }
 
-            return .content(partialResult, isValid: true)
+            return .content(partialResult)
         }
     }
 
