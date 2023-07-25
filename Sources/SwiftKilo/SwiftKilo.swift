@@ -401,7 +401,7 @@ public class SwiftKilo {
         private let fileHandle: FileHandle
         private var unicodeScalarsIterator: AsyncUnicodeScalarSequence<FileHandle.AsyncBytes>.AsyncIterator
         private var partialResult = ""
-        private var isTerminated = false
+        private var isFinished = false
 
         init(fileHandle: FileHandle) {
             self.fileHandle = fileHandle
@@ -413,12 +413,12 @@ public class SwiftKilo {
         }
 
         mutating func next() async throws -> PromptInput? {
-            guard !isTerminated else { return nil }
+            guard !isFinished else { return nil }
 
             guard let scalar = try await unicodeScalarsIterator.next(),
                   scalar != "\u{1b}"
             else {
-                isTerminated = true
+                isFinished = true
                 return .terminate
             }
 
@@ -426,7 +426,7 @@ public class SwiftKilo {
 
             if character.isNewline,
                partialResult.count > 1 {
-                isTerminated = true
+                isFinished = true
                 return .submit(partialResult)
             }
 
