@@ -394,8 +394,14 @@ public class SwiftKilo {
         enum PromptInput {
             case content(String)
             case terminate
-            case submit(String)
+            case submit(String, direction: Direction)
+
+            enum Direction {
+                case forward
+                case backward
+            }
         }
+
         typealias Element = PromptInput
 
         private let fileHandle: FileHandle
@@ -427,7 +433,7 @@ public class SwiftKilo {
             if character.isNewline,
                partialResult.count > 1 {
                 isFinished = true
-                return .submit(partialResult)
+                return .submit(partialResult, direction: .forward)
             }
 
             if scalar == .init("h").modified(with: .control),
