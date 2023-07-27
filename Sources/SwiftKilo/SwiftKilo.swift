@@ -318,7 +318,7 @@ public class SwiftKilo {
 
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                                 switch input {
-                                case .content(let content), .submit(let content):
+                                case .content(let content), .submit(let content, _):
                                     editor.file.path = content
                                     editor.statusMessage = .init(content: "Save as: \(content)")
                                     refreshScreen()
@@ -349,7 +349,24 @@ public class SwiftKilo {
 
                     awaitInput: for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                         switch input {
-                        case .content(let content), .submit(let content):
+                        case .content(let content):
+                            editor.statusMessage = .init(content: "Search: \(content)")
+                            refreshScreen()
+                            if let position = editor.file.find(for: content) {
+                                editor.file.cursor.move(to: position)
+                                didFind = true
+                            } else {
+                                didFind = false
+                            }
+                        case .submit(let content, let direction):
+                            // TODO: impl
+                            switch direction {
+                            case .forward:
+                                break
+                            case .backward:
+                                break
+                            }
+
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
                             if let position = editor.file.find(for: content) {
