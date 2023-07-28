@@ -36,7 +36,8 @@ final class KeyProcessor {
             action = .moveCursorLeft
         case ["j"]:
             action = .moveCursorDown
-        case ["k"]:
+        case ["k"],
+            ["\u{1b}", "[", "A"]:
             action = .moveCursorUp
         case ["l"]:
             action = .moveCursorRight
