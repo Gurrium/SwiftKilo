@@ -36,8 +36,7 @@ final class KeyProcessor {
             action = .moveCursorLeft
         case ["j"]:
             action = .moveCursorDown
-        case ["k"],
-            ["\u{1b}", "[", "A"]:
+        case ["k"]:
             action = .moveCursorUp
         case ["l"]:
             action = .moveCursorRight
@@ -53,6 +52,10 @@ final class KeyProcessor {
             action = .save
         case ["/"]:
             action = .find
+        case ["n"]:
+            action = .findNext
+        case ["N"]:
+            action = .findPrevious
         default:
             action = nil
         }

@@ -318,7 +318,7 @@ public class SwiftKilo {
 
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                                 switch input {
-                                case .content(let content), .submit(let content, _):
+                                case .content(let content), .submit(let content):
                                     editor.file.path = content
                                     editor.statusMessage = .init(content: "Save as: \(content)")
                                     refreshScreen()
@@ -349,24 +349,7 @@ public class SwiftKilo {
 
                     awaitInput: for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                         switch input {
-                        case .content(let content):
-                            editor.statusMessage = .init(content: "Search: \(content)")
-                            refreshScreen()
-                            if let position = editor.file.find(for: content) {
-                                editor.file.cursor.move(to: position)
-                                didFind = true
-                            } else {
-                                didFind = false
-                            }
-                        case .submit(let content, let direction):
-                            // TODO: impl
-                            switch direction {
-                            case .forward:
-                                break
-                            case .backward:
-                                break
-                            }
-
+                        case .content(let content), .submit(let content):
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
                             if let position = editor.file.find(for: content) {
@@ -386,6 +369,12 @@ public class SwiftKilo {
                     if !didFind {
                         editor.file.cursor.move(to: previousCursorPosition)
                     }
+                case .findNext:
+                    // TODO: impl
+                    break
+                case .findPrevious:
+                    // TODO: impl
+                    break
                 }
 
                 switch action {
@@ -411,12 +400,7 @@ public class SwiftKilo {
         enum PromptInput {
             case content(String)
             case terminate
-            case submit(String, direction: Direction)
-
-            enum Direction {
-                case forward
-                case backward
-            }
+            case submit(String)
         }
 
         typealias Element = PromptInput
@@ -450,7 +434,7 @@ public class SwiftKilo {
             if character.isNewline,
                partialResult.count > 1 {
                 isFinished = true
-                return .submit(partialResult, direction: .forward)
+                return .submit(partialResult)
             }
 
             if scalar == .init("h").modified(with: .control),
@@ -673,4 +657,6 @@ enum EditorAction {
     case changeModeToNormal
     case save
     case find
+    case findNext
+    case findPrevious
 }
