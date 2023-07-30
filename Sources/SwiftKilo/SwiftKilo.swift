@@ -175,7 +175,7 @@ public class SwiftKilo {
             isDirty = false
         }
 
-        func find(for str: String) -> Position? {
+        func find(_ str: String) -> Position? {
             for (y, row) in rows.enumerated() {
                 guard let range = row.raw.range(of: str) else { continue }
 
@@ -212,7 +212,7 @@ public class SwiftKilo {
         case insert
     }
 
-    struct EditorConfig {
+    struct Editor {
         var screen: Screen
         var origTermios: termios
         var file: File
@@ -227,7 +227,7 @@ public class SwiftKilo {
     }
 
     private let fileHandle: FileHandle
-    private var editor: EditorConfig!
+    private var editor: Editor!
     private var buffer = ""
     private var keyProcessor = KeyProcessor()
 
@@ -236,7 +236,7 @@ public class SwiftKilo {
 
         guard let (height, width) = getWindowSize() else { return nil }
 
-        editor = EditorConfig(
+        editor = Editor(
             screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(position: .origin)),
             origTermios: termios(),
             file: File(path: filePath, rows: [], cursor: Cursor(position: .origin), isDirty: false),
@@ -352,7 +352,7 @@ public class SwiftKilo {
                         case .content(let content), .submit(let content):
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
-                            if let position = editor.file.find(for: content) {
+                            if let position = editor.file.find(content) {
                                 editor.file.cursor.move(to: position)
                                 didFind = true
                             } else {
