@@ -175,7 +175,7 @@ public class SwiftKilo {
             isDirty = false
         }
 
-        func find(_ str: String) -> Position? {
+        func find(_ str: String, forward: Bool) -> Position? {
             for (y, row) in rows.enumerated() {
                 guard let range = row.raw.range(of: str) else { continue }
 
@@ -219,6 +219,11 @@ public class SwiftKilo {
         var statusMessage: StatusMessage?
         var mode: Mode
         var quitTimes = kQuitTimes
+        var findingString: String?
+
+        func find(_ str: String, forward: Bool) -> Position? {
+            file.find(str, forward: forward)
+        }
     }
 
     public static func main() async throws {
@@ -352,7 +357,7 @@ public class SwiftKilo {
                         case .content(let content), .submit(let content):
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
-                            if let position = editor.file.find(content) {
+                            if let position = editor.file.find(content, forward: true) {
                                 editor.file.cursor.move(to: position)
                                 didFind = true
                             } else {
