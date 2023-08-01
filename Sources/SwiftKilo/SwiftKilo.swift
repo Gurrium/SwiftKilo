@@ -222,7 +222,21 @@ public class SwiftKilo {
         var findingString: String?
 
         func find(_ str: String, forward: Bool) -> Position? {
-            file.find(str, forward: forward)
+            findingString = str
+
+            return file.find(str, forward: forward)
+        }
+
+        func findForward() -> Position? {
+            guard let findingString else { return nil }
+
+            return find(findingString, forward: true)
+        }
+
+        func findBackward() -> Position? {
+            guard let findingString else { return nil }
+
+            return find(findingString, forward: false)
         }
     }
 
@@ -374,12 +388,10 @@ public class SwiftKilo {
                     if !didFind {
                         editor.file.cursor.move(to: previousCursorPosition)
                     }
-                case .findNext:
-                    // TODO: impl
-                    break
-                case .findPrevious:
-                    // TODO: impl
-                    break
+                case .findForward:
+                    editor.findForward()
+                case .findBackward:
+                    editor.findBackward()
                 }
 
                 switch action {
@@ -662,6 +674,6 @@ enum EditorAction {
     case changeModeToNormal
     case save
     case find
-    case findNext
-    case findPrevious
+    case findForward
+    case findBackward
 }
