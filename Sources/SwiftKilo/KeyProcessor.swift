@@ -53,9 +53,9 @@ final class KeyProcessor {
         case ["/"]:
             action = .find
         case ["n"]:
-            action = .findNext
+            action = .findForward
         case ["N"]:
-            action = .findPrevious
+            action = .findBackward
         default:
             action = nil
         }
