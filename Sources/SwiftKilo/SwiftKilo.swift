@@ -221,19 +221,20 @@ public class SwiftKilo {
         var quitTimes = kQuitTimes
         var findingString: String?
 
-        func find(_ str: String, forward: Bool) -> Position? {
+        mutating func find(_ str: String, forward: Bool) -> Position? {
             findingString = str
 
             return file.find(str, forward: forward)
         }
 
-        func findForward() -> Position? {
+        mutating func findForward() -> Position? {
             guard let findingString else { return nil }
 
+            // FIXME: 同じ場所を返し続けるので直す
             return find(findingString, forward: true)
         }
 
-        func findBackward() -> Position? {
+        mutating func findBackward() -> Position? {
             guard let findingString else { return nil }
 
             return find(findingString, forward: false)
@@ -371,7 +372,7 @@ public class SwiftKilo {
                         case .content(let content), .submit(let content):
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
-                            if let position = editor.file.find(content, forward: true) {
+                            if let position = editor.find(content, forward: true) {
                                 editor.file.cursor.move(to: position)
                                 didFind = true
                             } else {
@@ -389,9 +390,13 @@ public class SwiftKilo {
                         editor.file.cursor.move(to: previousCursorPosition)
                     }
                 case .findForward:
-                    editor.findForward()
+                    if let position = editor.findForward() {
+                        editor.file.cursor.move(to: position)
+                    }
                 case .findBackward:
-                    editor.findBackward()
+                    if let position = editor.findBackward() {
+                        editor.file.cursor.move(to: position)
+                    }
                 }
 
                 switch action {
