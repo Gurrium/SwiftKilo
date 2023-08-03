@@ -65,6 +65,7 @@ public class SwiftKilo {
 
     struct File {
         struct Row {
+            // privateな方が健全な気がする
             var raw: String {
                 didSet {
                     cook()
@@ -104,6 +105,10 @@ public class SwiftKilo {
                 let stringIndex = raw.index(raw.startIndex, offsetBy: index)
 
                 raw.remove(at: stringIndex)
+            }
+
+            mutating func removeFirst(_ k: Int = 1) {
+                raw.removeFirst(k)
             }
         }
 
@@ -175,13 +180,16 @@ public class SwiftKilo {
             isDirty = false
         }
 
-        func find(_ str: String, forward: Bool) -> Position? {
-            for (y, row) in rows.enumerated() {
+        func find(_ str: String, forward: Bool, from startPosition: Position = .origin) -> Position? {
+            var targetRows = Array(rows.dropFirst(startPosition.y))
+            targetRows[0].removeFirst(startPosition.x)
+
+            for (y, row) in targetRows.enumerated() {
                 guard let range = row.raw.range(of: str) else { continue }
 
                 let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
 
-                return Position(x: x, y: y)
+                return Position(x: x + startPosition.x, y: y + startPosition.y)
             }
 
             return nil
