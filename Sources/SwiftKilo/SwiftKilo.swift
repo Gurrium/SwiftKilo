@@ -180,7 +180,7 @@ public class SwiftKilo {
             isDirty = false
         }
 
-        func find(_ str: String, forward: Bool, from startPosition: Position = .origin) -> Position? {
+        func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
             var targetRows = Array(rows.dropFirst(startPosition.y))
             targetRows[0].removeFirst(startPosition.x)
 
@@ -227,25 +227,69 @@ public class SwiftKilo {
         var statusMessage: StatusMessage?
         var mode: Mode
         var quitTimes = kQuitTimes
-        var findingString: String?
+        var lastSearchResult: SearchResult?
 
-        mutating func find(_ str: String, forward: Bool) -> Position? {
-            findingString = str
+        struct SearchResult {
+            var target: String
+            var position: Position?
+            var direction: Direction
 
-            return file.find(str, forward: forward)
+            enum Direction {
+                case forward
+                case backward
+            }
         }
 
-        mutating func findForward() -> Position? {
-            guard let findingString else { return nil }
+        private mutating func find(_ str: String, _ direction: SearchResult.Direction, from startPosition: Position) -> Position? {
+            // FIXME: このあたりでdirectionからforwardに変えられる気がする
+            let matchedPosition = file.find(str, forward: forward, from: startPosition)
 
-            // FIXME: 同じ場所を返し続けるので直す
-            return find(findingString, forward: true)
+            lastSearchResult = SearchResult(target: str, position: matchedPosition, direction: direction)
+
+            return matchedPosition
         }
 
-        mutating func findBackward() -> Position? {
-            guard let findingString else { return nil }
+        mutating func find(_ str: String) -> Position? {
+            find(str, .forward, from: .origin)
+        }
 
-            return find(findingString, forward: false)
+        mutating func findNext() -> Position? {
+            guard let lastSearchResult else { return nil }
+
+            let startPosition: Position
+
+            if var position = lastSearchResult.position {
+                position.x += 1
+                startPosition = position
+            } else {
+                startPosition = .origin
+            }
+
+            return find(lastSearchResult.target, lastSearchResult.direction, from: startPosition)
+        }
+
+        mutating func findPrevious() -> Position? {
+            guard let lastSearchResult else { return nil }
+
+            let startPosition: Position
+
+            if var position = lastSearchResult.position {
+                position.x += 1
+                startPosition = position
+            } else {
+                startPosition = .origin
+            }
+
+            let direction: SearchResult.Direction
+
+            switch lastSearchResult.direction {
+            case .forward:
+                direction = .backward
+            case .backward:
+                direction = .forward
+            }
+
+            return find(lastSearchResult.target, direction, from: startPosition)
         }
     }
 
@@ -398,11 +442,11 @@ public class SwiftKilo {
                         editor.file.cursor.move(to: previousCursorPosition)
                     }
                 case .findForward:
-                    if let position = editor.findForward() {
+                    if let position = editor.findNext() {
                         editor.file.cursor.move(to: position)
                     }
                 case .findBackward:
-                    if let position = editor.findBackward() {
+                    if let position = editor.findPrevious() {
                         editor.file.cursor.move(to: position)
                     }
                 }
