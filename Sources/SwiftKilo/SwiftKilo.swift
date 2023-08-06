@@ -110,6 +110,10 @@ public class SwiftKilo {
             mutating func removeFirst(_ k: Int = 1) {
                 raw.removeFirst(k)
             }
+
+            mutating func dropFirst(_ k: Int = 1) -> String.SubSequence {
+                raw.dropFirst(k)
+            }
         }
 
         var path: String?
@@ -181,15 +185,28 @@ public class SwiftKilo {
         }
 
         func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
-            var targetRows = Array(rows.dropFirst(startPosition.y))
-            targetRows[0].removeFirst(startPosition.x)
+            var rowsBefore = Array(rows[0..<startPosition.y])
+            var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
 
-            for (y, row) in targetRows.enumerated() {
+            if !rowsAfter.isEmpty {
+                rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
+                rowsAfter[0].removeFirst(startPosition.x)
+            }
+
+            for (y, row) in rowsAfter.enumerated() {
                 guard let range = row.raw.range(of: str) else { continue }
 
                 let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
 
                 return Position(x: y == 0 ? x + startPosition.x : x, y: y + startPosition.y)
+            }
+
+            for (y, row) in rowsBefore.enumerated() {
+                guard let range = row.raw.range(of: str) else { continue }
+
+                let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
+
+                return Position(x: x, y: y)
             }
 
             return nil
