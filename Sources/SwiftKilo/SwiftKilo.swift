@@ -185,31 +185,36 @@ public class SwiftKilo {
         }
 
         func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
-            var rowsBefore = Array(rows[0..<startPosition.y])
-            var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
+            if forward {
+                var rowsBefore = Array(rows[0..<startPosition.y])
+                var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
 
-            if !rowsAfter.isEmpty {
-                rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
-                rowsAfter[0].removeFirst(startPosition.x)
+                if !rowsAfter.isEmpty {
+                    rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
+                    rowsAfter[0].removeFirst(startPosition.x)
+                }
+
+                for (y, row) in rowsAfter.enumerated() {
+                    guard let range = row.raw.range(of: str) else { continue }
+
+                    let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
+
+                    return Position(x: y == 0 ? x + startPosition.x : x, y: y + startPosition.y)
+                }
+
+                for (y, row) in rowsBefore.enumerated() {
+                    guard let range = row.raw.range(of: str) else { continue }
+
+                    let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
+
+                    return Position(x: x, y: y)
+                }
+
+                return nil
+            } else {
+                // TODO: impl
+                return nil
             }
-
-            for (y, row) in rowsAfter.enumerated() {
-                guard let range = row.raw.range(of: str) else { continue }
-
-                let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
-
-                return Position(x: y == 0 ? x + startPosition.x : x, y: y + startPosition.y)
-            }
-
-            for (y, row) in rowsBefore.enumerated() {
-                guard let range = row.raw.range(of: str) else { continue }
-
-                let x = row.raw.distance(from: row.raw.startIndex, to: range.lowerBound)
-
-                return Position(x: x, y: y)
-            }
-
-            return nil
         }
     }
 
