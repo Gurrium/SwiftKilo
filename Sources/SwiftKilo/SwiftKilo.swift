@@ -185,15 +185,15 @@ public class SwiftKilo {
         }
 
         func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
+            var rowsBefore = Array(rows[0..<startPosition.y])
+            var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
+
+            if !rowsAfter.isEmpty {
+                rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
+                rowsAfter[0].removeFirst(startPosition.x)
+            }
+
             if forward {
-                var rowsBefore = Array(rows[0..<startPosition.y])
-                var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
-
-                if !rowsAfter.isEmpty {
-                    rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
-                    rowsAfter[0].removeFirst(startPosition.x)
-                }
-
                 for (y, row) in rowsAfter.enumerated() {
                     guard let range = row.raw.range(of: str) else { continue }
 
@@ -212,7 +212,38 @@ public class SwiftKilo {
 
                 return nil
             } else {
-                // TODO: impl
+                if let currentRow,
+                   let range = currentRow.raw.range(of: str)
+                {
+                    let x = currentRow.raw.distance(from: currentRow.raw.startIndex, to: range.lowerBound)
+
+                    if x < startPosition.x {
+                        return Position(x: x, y: startPosition.y)
+                    }
+                }
+
+                let str = String(str.reversed())
+                for (reversedY, row) in rowsBefore.reversed().enumerated() {
+                    let raw = String(row.raw.reversed())
+
+                    guard let range = raw.range(of: str) else { continue }
+
+                    let reversedX = raw.distance(from: raw.startIndex, to: range.lowerBound)
+
+                    return Position(x: raw.count - 1 - reversedX, y: rowsBefore.count - 1 - reversedY)
+                }
+
+                for (reversedY, row) in rowsAfter.reversed().enumerated() {
+                    let raw = String(row.raw.reversed())
+
+                    guard let range = raw.range(of: str) else { continue }
+
+                    let reversedX = raw.distance(from: raw.startIndex, to: range.lowerBound)
+                    let x = raw.count - 1 - reversedX
+
+                    return Position(x: reversedY == 0 ? x + startPosition.x : x, y: reversedY + startPosition.y)
+                }
+
                 return nil
             }
         }
