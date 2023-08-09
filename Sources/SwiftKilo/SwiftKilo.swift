@@ -111,8 +111,8 @@ public class SwiftKilo {
                 raw.removeFirst(k)
             }
 
-            mutating func dropFirst(_ k: Int = 1) -> String.SubSequence {
-                raw.dropFirst(k)
+            mutating func prefix(_ maxLength: Int = 1) -> Substring {
+                raw.prefix(maxLength)
             }
         }
 
@@ -189,7 +189,7 @@ public class SwiftKilo {
             var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
 
             if !rowsAfter.isEmpty {
-                rowsBefore.append(Row(raw: String(rowsAfter[0].dropFirst(startPosition.x))))
+                rowsBefore.append(Row(raw: String(rowsAfter[0].prefix(startPosition.x))))
                 rowsAfter[0].removeFirst(startPosition.x)
             }
 
@@ -228,9 +228,9 @@ public class SwiftKilo {
 
                     guard let range = raw.range(of: str) else { continue }
 
-                    let reversedX = raw.distance(from: raw.startIndex, to: range.lowerBound)
+                    let x = raw.distance(from: range.upperBound, to: raw.endIndex)
 
-                    return Position(x: raw.count - 1 - reversedX, y: rowsBefore.count - 1 - reversedY)
+                    return Position(x: x, y: rowsBefore.count - 1 - reversedY)
                 }
 
                 for (reversedY, row) in rowsAfter.reversed().enumerated() {
