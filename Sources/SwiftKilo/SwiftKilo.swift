@@ -296,28 +296,23 @@ public class SwiftKilo {
         }
 
         mutating func find(_ str: String) -> Position? {
-            find(str, forward: true, from: .origin)
+            find(str, forward: true, from: file.cursor.position)
         }
 
         mutating func findNext() -> Position? {
             guard let lastSearchResult else { return nil }
 
-            let startPosition: Position
+            var position = file.cursor.position
+            position.x += 1
 
-            if var position = lastSearchResult.position {
-                position.x += 1
-                startPosition = position
-            } else {
-                startPosition = .origin
-            }
-
-            return find(lastSearchResult.target, forward: true, from: startPosition)
+            return find(lastSearchResult.target, forward: true, from: position)
         }
 
+        // FIXME: 一番上の検索結果から呼ぶとおかしい
         mutating func findPrevious() -> Position? {
             guard let lastSearchResult else { return nil }
 
-            return find(lastSearchResult.target, forward: false, from: lastSearchResult.position ?? .origin)
+            return find(lastSearchResult.target, forward: false, from: file.cursor.position)
         }
     }
 
