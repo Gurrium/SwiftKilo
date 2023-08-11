@@ -238,10 +238,9 @@ public class SwiftKilo {
 
                     guard let range = raw.range(of: str) else { continue }
 
-                    let reversedX = raw.distance(from: raw.startIndex, to: range.lowerBound)
-                    let x = raw.count - 1 - reversedX
+                    let x = raw.distance(from: range.upperBound, to: raw.endIndex)
 
-                    return Position(x: reversedY == 0 ? x + startPosition.x : x, y: reversedY + startPosition.y)
+                    return Position(x: x, y: startPosition.y + rowsAfter.count - reversedY - 1)
                 }
 
                 return nil
