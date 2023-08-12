@@ -78,9 +78,13 @@ public class SwiftKilo {
             private var _cooked = ""
             private mutating func cook() {
                 let chopped = raw.enumerated().flatMap { i, egc in
-                    guard egc == "\t" else { return [egc] }
-
-                    return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
+                    if egc == "\t" {
+                        return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
+                    } else if "0123456789".contains(where: { $0 == egc }) {
+                        return Array("\u{1b}[31m") + [egc] + Array("\u{1b}[39m")
+                    } else {
+                        return  [egc]
+                    }
                 }
                 _cooked = String(chopped)
             }
