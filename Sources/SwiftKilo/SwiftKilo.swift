@@ -311,7 +311,6 @@ public class SwiftKilo {
             return find(lastSearchResult.target, forward: true, from: position)
         }
 
-        // FIXME: 一番上の検索結果から呼ぶとおかしい
         mutating func findPrevious() -> Position? {
             guard let lastSearchResult else { return nil }
 
