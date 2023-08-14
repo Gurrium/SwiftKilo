@@ -66,34 +66,7 @@ public class SwiftKilo {
     struct File {
         struct Row {
             // privateな方が健全な気がする
-            var raw: String {
-                didSet {
-                    cook()
-                }
-            }
-            var cooked: String {
-                _cooked
-            }
-
-            private var _cooked = ""
-            private mutating func cook() {
-                let chopped = raw.enumerated().flatMap { i, egc in
-                    if egc == "\t" {
-                        return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
-                    } else if "0123456789".contains(where: { $0 == egc }) {
-                        return Array("\u{1b}[31m") + [egc] + Array("\u{1b}[39m")
-                    } else {
-                        return  [egc]
-                    }
-                }
-                _cooked = String(chopped)
-            }
-
-            init(raw: String) {
-                self.raw = raw
-
-                cook()
-            }
+            var raw: String
 
             mutating func insert(_ chr: Character, at index: Int) {
                 guard index < raw.count + 1 else { return }
@@ -279,11 +252,32 @@ public class SwiftKilo {
     struct Editor {
         var screen: Screen
         var origTermios: termios
-        var file: File
+        var file: File {
+            didSet {
+                buildRows()
+            }
+        }
         var statusMessage: StatusMessage?
         var mode: Mode
         var quitTimes = kQuitTimes
         var lastSearchResult: SearchResult?
+
+        var rows: [String] = []
+        private mutating func buildRows() {
+            rows = file.rows.map { row in
+                let chopped = row.raw.enumerated().flatMap { i, egc in
+                    if egc == "\t" {
+                        return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
+                    } else if "0123456789".contains(where: { $0 == egc }) {
+                        return Array("\u{1b}[31m") + [egc] + Array("\u{1b}[39m")
+                    } else {
+                        return  [egc]
+                    }
+                }
+
+                return String(chopped)
+            }
+        }
 
         struct SearchResult {
             var target: String
@@ -620,9 +614,9 @@ public class SwiftKilo {
 
     private func drawRows() {
         for y in (0..<editor.screen.countOfRows) {
-            let fileRow = y + editor.screen.rowOffset
+            let rowNum = y + editor.screen.rowOffset
 
-            if (fileRow >= editor.file.rows.count) {
+            if (rowNum >= editor.file.rows.count) {
                 if editor.file.rows.count == 0 && y == editor.screen.countOfRows / 3 {
                     var message = String("SwiftKilo editor -- version \(kVersionString)".prefix(editor.screen.countOfColumns))
 
@@ -639,7 +633,7 @@ public class SwiftKilo {
                     buffer.append(("~"))
                 }
             } else {
-                buffer.append(String(editor.file.rows[fileRow].cooked.dropFirst(editor.screen.columnOffset).prefix(editor.screen.countOfColumns)))
+                buffer.append(String(editor.rows[rowNum].dropFirst(editor.screen.columnOffset).prefix(editor.screen.countOfColumns)))
             }
 
             buffer.append("\u{1b}[K")
