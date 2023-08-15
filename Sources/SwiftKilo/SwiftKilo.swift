@@ -94,7 +94,7 @@ public class SwiftKilo {
         }
 
         var path: String?
-        var rows: [Row]
+        private(set) var rows: [Row]
         var cursor: Cursor
         var isDirty: Bool
 
@@ -555,6 +555,7 @@ public class SwiftKilo {
             rows = []
         }
 
+        // FIXME
         editor.file.rows = rows
     }
 
@@ -616,8 +617,8 @@ public class SwiftKilo {
         for y in (0..<editor.screen.countOfRows) {
             let rowNum = y + editor.screen.rowOffset
 
-            if (rowNum >= editor.file.rows.count) {
-                if editor.file.rows.count == 0 && y == editor.screen.countOfRows / 3 {
+            if (rowNum >= editor.rows.count) {
+                if editor.rows.count == 0 && y == editor.screen.countOfRows / 3 {
                     var message = String("SwiftKilo editor -- version \(kVersionString)".prefix(editor.screen.countOfColumns))
 
                     var padding = (editor.screen.countOfColumns - message.count) / 2
@@ -647,8 +648,8 @@ public class SwiftKilo {
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
 
-        let lstatus = "\(editor.file.path?.prefix(20) ?? "[No Name]") - \(editor.file.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
-        let rstatus = "\(editor.file.cursor.position.y + 1)/\(editor.file.rows.count)"
+        let lstatus = "\(editor.file.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
+        let rstatus = "\(editor.file.cursor.position.y + 1)/\(editor.rows.count)"
 
         if lstatus.count + rstatus.count <= editor.screen.countOfColumns {
             buffer.append(([lstatus] + Array(repeating: " ", count: editor.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
