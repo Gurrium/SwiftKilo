@@ -104,6 +104,10 @@ public class SwiftKilo {
             return rows[cursor.position.y]
         }
 
+        mutating func populateRows(_ rows: [Row]) {
+            self.rows = rows
+        }
+
         mutating func insertNewLine() {
             let content: String
             if cursor.position.y > rows.count {
@@ -555,8 +559,7 @@ public class SwiftKilo {
             rows = []
         }
 
-        // FIXME
-        editor.file.rows = rows
+        editor.file.populateRows(rows)
     }
 
     // MARK: rendering
