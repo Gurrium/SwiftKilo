@@ -65,7 +65,6 @@ public class SwiftKilo {
 
     struct File {
         struct Row {
-            // privateな方が健全な気がする
             var raw: String
 
             mutating func insert(_ chr: Character, at index: Int) {
