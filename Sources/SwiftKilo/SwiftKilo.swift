@@ -92,10 +92,10 @@ public class SwiftKilo {
             }
         }
 
-        var path: String?
         private(set) var rows: [Row]
-        var cursor: Cursor
-        var isDirty: Bool
+        private(set) var cursor = Cursor(position: .origin)
+        private(set) var isDirty = false
+
 
         var currentRow: Row? {
             guard cursor.position.y < rows.count else { return nil }
@@ -103,8 +103,16 @@ public class SwiftKilo {
             return rows[cursor.position.y]
         }
 
-        mutating func populateRows(_ rows: [Row]) {
-            self.rows = rows
+        init(path: String?) {
+            if let path,
+               let data = FileManager.default.contents(atPath: path),
+               let contents = String(data: data, encoding: .utf8) {
+                rows = contents.split(whereSeparator: \.isNewline).map { line in
+                    return File.Row(raw: String(line))
+                }
+            } else {
+                rows = []
+            }
         }
 
         mutating func insertNewLine() {
@@ -154,9 +162,7 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func save() throws {
-            guard let path else { return }
-
+        mutating func save(to path: String) throws {
             let url = URL(fileURLWithPath: path)
 
             try rows.map(\.raw).joined(separator: "\r\n").write(to: url, atomically: true, encoding: .utf8)
@@ -253,6 +259,11 @@ public class SwiftKilo {
     }
 
     struct Editor {
+        struct SearchResult {
+            var target: String
+            var position: Position?
+        }
+
         var screen: Screen
         var origTermios: termios
         var file: File {
@@ -261,7 +272,7 @@ public class SwiftKilo {
             }
         }
         var statusMessage: StatusMessage?
-        var mode: Mode
+        var mode = Mode.normal
         var quitTimes = kQuitTimes
         var lastSearchResult: SearchResult?
 
@@ -282,9 +293,19 @@ public class SwiftKilo {
             }
         }
 
-        struct SearchResult {
-            var target: String
-            var position: Position?
+        private var path: String
+
+        init(
+            screen: Screen,
+            origTermios: termios,
+            path: String?
+        ) {
+            self.screen = screen
+            self.origTermios = origTermios
+            self.path = path ?? "tmp"
+            self.file = File(path: self.path)
+
+            buildRows()
         }
 
         private mutating func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
@@ -333,8 +354,7 @@ public class SwiftKilo {
         editor = Editor(
             screen: Screen(countOfRows: height - 2, countOfColumns: width, rowOffset: 0, columnOffset: 0, cursor: Cursor(position: .origin)),
             origTermios: termios(),
-            file: File(path: filePath, rows: [], cursor: Cursor(position: .origin), isDirty: false),
-            mode: .normal
+            path: filePath
         )
     }
 
@@ -344,8 +364,8 @@ public class SwiftKilo {
 
     private func main() async throws {
         enableRawMode()
-
-        try openEditor()
+//
+//        try openEditor()
 
         editor.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit | / = find")
 
@@ -542,23 +562,6 @@ public class SwiftKilo {
 
             return .content(partialResult)
         }
-    }
-
-    // MARK: file i/o
-
-    private func openEditor() throws {
-        let rows: [File.Row]
-        if let filePath = editor.file.path,
-           let data = FileManager.default.contents(atPath: filePath),
-           let contents = String(data: data, encoding: .utf8) {
-            rows = contents.split(whereSeparator: \.isNewline).map { line in
-                return File.Row(raw: String(line))
-            }
-        } else {
-            rows = []
-        }
-
-        editor.file.populateRows(rows)
     }
 
     // MARK: rendering
