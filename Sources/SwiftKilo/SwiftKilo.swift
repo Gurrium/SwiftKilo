@@ -170,6 +170,19 @@ public class SwiftKilo {
             isDirty = false
         }
 
+        // MARK: move
+
+        mutating func move(_ direction: Cursor.Direction, distance: Int) {
+            cursor.move(direction, distance: distance)
+        }
+
+        mutating func move(to position: Position) {
+            cursor.move(to: position)
+        }
+
+        // MARK: find
+
+
         func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
             var rowsBefore = Array(rows[0..<startPosition.y])
             var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
@@ -308,6 +321,18 @@ public class SwiftKilo {
             buildRows()
         }
 
+        // MARK: move
+
+        mutating func move(_ direction: Cursor.Direction, distance: Int) {
+            file.move(direction, distance: distance)
+        }
+
+        mutating func move(to position: Position) {
+            file.move(to: position)
+        }
+
+        // MARK: find
+
         private mutating func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
             let matchedPosition = file.find(str, forward: forward, from: startPosition)
 
@@ -379,28 +404,28 @@ public class SwiftKilo {
                 case .moveCursorUp:
                     guard editor.file.cursor.position.y > 0 else { break }
 
-                    editor.file.cursor.move(.up, distance: 1)
+                    editor.move(.up, distance: 1)
                 case .moveCursorLeft:
                     guard editor.file.cursor.position.x > 0 else { break }
 
-                    editor.file.cursor.move(.left, distance: 1)
+                    editor.move(.left, distance: 1)
                 case .moveCursorRight:
                     guard editor.file.cursor.position.x < editor.file.currentRow?.raw.count ?? 0 else { break }
 
-                    editor.file.cursor.move(.right, distance: 1)
+                    editor.move(.right, distance: 1)
                 case .moveCursorDown:
                     guard editor.file.cursor.position.y < editor.file.rows.count else { break }
 
-                    editor.file.cursor.move(.down, distance: 1)
+                    editor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
                     editor.file.cursor.position.x = 0
                 case .moveCursorToEndOfLine:
                     editor.file.cursor.position.x = editor.file.currentRow?.raw.count ?? 0
                 // page
                 case .movePageUp:
-                    editor.file.cursor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
+                    editor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
                 case .movePageDown:
-                    editor.file.cursor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.file.cursor.position.y))
+                    editor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.file.cursor.position.y))
                 // text
                 case .delete:
                     editor.file.deleteCharacter()
@@ -467,7 +492,7 @@ public class SwiftKilo {
                             editor.statusMessage = .init(content: "Search: \(content)")
                             refreshScreen()
                             if let position = editor.find(content) {
-                                editor.file.cursor.move(to: position)
+                                editor.move(to: position)
                                 didFind = true
                             } else {
                                 didFind = false
@@ -481,15 +506,15 @@ public class SwiftKilo {
                     refreshScreen()
 
                     if !didFind {
-                        editor.file.cursor.move(to: previousCursorPosition)
+                        editor.move(to: previousCursorPosition)
                     }
                 case .findForward:
                     if let position = editor.findNext() {
-                        editor.file.cursor.move(to: position)
+                        editor.move(to: position)
                     }
                 case .findBackward:
                     if let position = editor.findPrevious() {
-                        editor.file.cursor.move(to: position)
+                        editor.move(to: position)
                     }
                 }
 
