@@ -174,10 +174,22 @@ public class SwiftKilo {
 
         mutating func move(_ direction: Cursor.Direction, distance: Int) {
             cursor.move(direction, distance: distance)
+
+            correctCursorPosition()
         }
 
         mutating func move(to position: Position) {
             cursor.move(to: position)
+
+            correctCursorPosition()
+        }
+
+        mutating func correctCursorPosition() {
+            if cursor.position.y >= rows.count {
+                cursor.position = .init(x: 0, y: rows.count)
+            } else {
+                cursor.position.x = min(cursor.position.x, currentRow?.raw.count ?? 0)
+            }
         }
 
         // MARK: find
@@ -523,12 +535,6 @@ public class SwiftKilo {
                     break
                 default:
                     editor.quitTimes = kQuitTimes
-                }
-
-                if editor.file.cursor.position.y >= editor.file.rows.count {
-                    editor.file.cursor.position.x = 0
-                } else {
-                    editor.file.cursor.position.x = min(editor.file.cursor.position.x, editor.file.currentRow?.raw.count ?? 0)
                 }
             }
         }
