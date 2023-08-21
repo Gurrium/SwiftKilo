@@ -430,9 +430,9 @@ public class SwiftKilo {
 
                     editor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
-                    editor.file.cursor.position.x = 0
+                    editor.move(.left, distance: editor.file.cursor.position.x)
                 case .moveCursorToEndOfLine:
-                    editor.file.cursor.position.x = editor.file.currentRow?.raw.count ?? 0
+                    editor.move(to: .init(x: editor.file.currentRow?.raw.count ?? 0, y: editor.file.cursor.position.y))
                 // page
                 case .movePageUp:
                     editor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
