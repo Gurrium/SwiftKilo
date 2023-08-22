@@ -115,18 +115,16 @@ public class SwiftKilo {
             }
         }
 
-        mutating func insertNewLine() {
+        mutating func insertNewLine(after position: Position) {
             let content: String
-            if cursor.position.y > rows.count {
+            if position.y > rows.count {
                 content = ""
             } else {
-                content = String(rows[cursor.position.y].raw.prefix(cursor.position.x))
-                rows[cursor.position.y].raw.removeFirst(min(cursor.position.x, rows[cursor.position.y].raw.count))
+                content = String(rows[position.y].raw.prefix(position.x))
+                rows[position.y].raw.removeFirst(min(position.x, rows[position.y].raw.count))
             }
 
-            rows.insert(.init(raw: content), at: cursor.position.y)
-            cursor.move(.down, distance: 1)
-            cursor.move(.left, distance: cursor.position.x)
+            rows.insert(.init(raw: content), at: position.y)
 
             isDirty = true
         }
@@ -442,7 +440,10 @@ public class SwiftKilo {
                 case .delete:
                     editor.file.deleteCharacter()
                 case .newLine:
-                    editor.file.insertNewLine()
+                    editor.file.insertNewLine(after: editor.file.cursor.position)
+
+                    editor.move(.down, distance: 1)
+                    editor.move(.left, distance: editor.file.cursor.position.x)
                 case .insert(let scalar):
                     editor.file.insert(Character.init(scalar))
                 // editor
