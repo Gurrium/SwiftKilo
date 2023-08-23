@@ -289,6 +289,7 @@ public class SwiftKilo {
 
         var screen: Screen
         var origTermios: termios
+        var path: String?
         var file: File {
             didSet {
                 buildRows()
@@ -316,7 +317,6 @@ public class SwiftKilo {
             }
         }
 
-        private var path: String
 
         init(
             screen: Screen,
@@ -325,7 +325,7 @@ public class SwiftKilo {
         ) {
             self.screen = screen
             self.origTermios = origTermios
-            self.path = path ?? "tmp"
+            self.path = path
             self.file = File(path: self.path)
 
             buildRows()
@@ -464,18 +464,18 @@ public class SwiftKilo {
                     editor.mode = .normal
                 case .save:
                     do {
-                        if (editor.file.path ?? "").isEmpty {
+                        if (editor.path ?? "").isEmpty {
                             editor.statusMessage = .init(content: "Save as:")
                             refreshScreen()
 
                             for try await input in AsyncPromptInputSequence(fileHandle: fileHandle) {
                                 switch input {
                                 case .content(let content), .submit(let content):
-                                    editor.file.path = content
+                                    editor.path = content
                                     editor.statusMessage = .init(content: "Save as: \(content)")
                                     refreshScreen()
                                 case .terminate:
-                                    editor.file.path = nil
+                                    editor.path = nil
                                 }
                             }
 
@@ -483,7 +483,7 @@ public class SwiftKilo {
                             refreshScreen()
                         }
 
-                        if editor.file.path == nil {
+                        if editor.path == nil {
                             editor.statusMessage = .init(content: "Save aborted")
                         } else {
                             try editor.file.save()
@@ -685,7 +685,7 @@ public class SwiftKilo {
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
 
-        let lstatus = "\(editor.file.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
+        let lstatus = "\(editor.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
         let rstatus = "\(editor.file.cursor.position.y + 1)/\(editor.rows.count)"
 
         if lstatus.count + rstatus.count <= editor.screen.countOfColumns {
