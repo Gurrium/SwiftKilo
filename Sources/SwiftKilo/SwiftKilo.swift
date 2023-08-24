@@ -331,6 +331,12 @@ public class SwiftKilo {
             buildRows()
         }
 
+        mutating func save() throws {
+            guard let path else { return }
+
+            try file.save(to: path)
+        }
+
         // MARK: move
 
         mutating func move(_ direction: Cursor.Direction, distance: Int) {
@@ -486,7 +492,7 @@ public class SwiftKilo {
                         if editor.path == nil {
                             editor.statusMessage = .init(content: "Save aborted")
                         } else {
-                            try editor.file.save()
+                            try editor.save()
                             editor.statusMessage = .init(content: "Saved")
                         }
                     } catch {
