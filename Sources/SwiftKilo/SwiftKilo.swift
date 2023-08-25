@@ -96,7 +96,6 @@ public class SwiftKilo {
         private(set) var cursor = Cursor(position: .origin)
         private(set) var isDirty = false
 
-
         var currentRow: Row? {
             guard cursor.position.y < rows.count else { return nil }
 
@@ -129,15 +128,14 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func insert(_ char: Character) {
-            if (cursor.position.y == rows.count) {
+        mutating func insert(_ char: Character, at position: Position) {
+            if (position.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
 
-            guard cursor.position.y < rows.count else { return }
+            guard position.y < rows.count else { return }
 
-            rows[cursor.position.y].insert(char, at: cursor.position.x)
-            cursor.move(.right, distance: 1)
+            rows[position.y].insert(char, at: position.x)
 
             isDirty = true
         }
@@ -451,7 +449,9 @@ public class SwiftKilo {
                     editor.move(.down, distance: 1)
                     editor.move(.left, distance: editor.file.cursor.position.x)
                 case .insert(let scalar):
-                    editor.file.insert(Character.init(scalar))
+                    editor.file.insert(Character.init(scalar), at: editor.file.cursor.position)
+
+                    editor.move(.right, distance: 1)
                 // editor
                 case .quit:
                     if editor.file.isDirty && editor.quitTimes > 0 {
