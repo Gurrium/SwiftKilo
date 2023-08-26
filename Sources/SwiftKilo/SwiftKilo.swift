@@ -35,9 +35,17 @@ public class SwiftKilo {
         var y: Int
     }
 
+    enum Movement {
+        case up(distance: Int)
+        case down(distance: Int)
+        case left(distance: Int)
+        case right(distance: Int)
+    }
+
     struct Cursor {
         var position: Position
 
+        // TODO: Movementに置き換える
         enum Direction {
             case up
             case down
@@ -140,21 +148,22 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func deleteCharacter() {
-            if cursor.position.x > 0 {
-                rows[cursor.position.y].remove(at: cursor.position.x - 1)
-                cursor.move(.left, distance: 1)
-            } else if cursor.position.y > 0 {
-                let distance = rows[cursor.position.y - 1].raw.count
+        mutating func deleteCharacter(at position: Position) {
+            if position.x > 0 {
+                rows[position.y].remove(at: position.x - 1)
+//                cursor.move(.left, distance: 1)
+            } else if position.y > 0 {
+//                let distance = rows[position.y - 1].raw.count
 
-                rows[cursor.position.y - 1] = .init(raw: rows[cursor.position.y - 1].raw + rows[cursor.position.y].raw)
-                rows.remove(at: cursor.position.y)
+                rows[position.y - 1] = .init(raw: rows[position.y - 1].raw + rows[position.y].raw)
+                rows.remove(at: position.y)
 
-                cursor.move(.up, distance: 1)
-                cursor.move(.right, distance: distance)
+//                cursor.move(.up, distance: 1)
+//                cursor.move(.right, distance: distance)
             } else {
                 return
             }
+
             isDirty = true
         }
 
