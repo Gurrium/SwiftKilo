@@ -101,6 +101,7 @@ public class SwiftKilo {
         }
 
         private(set) var rows: [Row]
+        // TODO: Editorに移す
         private(set) var cursor = Cursor(position: .origin)
         private(set) var isDirty = false
 
@@ -148,23 +149,25 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func deleteCharacter(at position: Position) {
+        mutating func deleteCharacter(at position: Position) -> [Movement] {
+            defer {
+                isDirty = true
+            }
+
             if position.x > 0 {
                 rows[position.y].remove(at: position.x - 1)
-//                cursor.move(.left, distance: 1)
+
+                return [.left(distance: 1)]
             } else if position.y > 0 {
-//                let distance = rows[position.y - 1].raw.count
+                let distance = rows[position.y - 1].raw.count
 
                 rows[position.y - 1] = .init(raw: rows[position.y - 1].raw + rows[position.y].raw)
                 rows.remove(at: position.y)
 
-//                cursor.move(.up, distance: 1)
-//                cursor.move(.right, distance: distance)
+                return [.up(distance: 1), .right(distance: distance)]
             } else {
-                return
+                return []
             }
-
-            isDirty = true
         }
 
         mutating func save(to path: String) throws {
@@ -177,6 +180,7 @@ public class SwiftKilo {
 
         // MARK: move
 
+        // TODO: Editorにメソッドを移す
         mutating func move(_ direction: Cursor.Direction, distance: Int) {
             cursor.move(direction, distance: distance)
 
@@ -451,7 +455,20 @@ public class SwiftKilo {
                     editor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.file.cursor.position.y))
                 // text
                 case .delete:
-                    editor.file.deleteCharacter()
+                    let movementList = editor.file.deleteCharacter(at: editor.file.cursor.position)
+
+                    movementList.forEach { movement in
+                        switch movement {
+                        case .up(let distance):
+                            editor.file.move(.up, distance: distance)
+                        case .left(let distance):
+                            editor.file.move(.left, distance: distance)
+                        case .right(let distance):
+                            editor.file.move(.right, distance: distance)
+                        case .down(let distance):
+                            editor.file.move(.down, distance: distance)
+                        }
+                    }
                 case .newLine:
                     editor.file.insertNewLine(after: editor.file.cursor.position)
 
