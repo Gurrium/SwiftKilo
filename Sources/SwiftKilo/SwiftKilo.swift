@@ -358,6 +358,21 @@ public class SwiftKilo {
             file.move(to: position)
         }
 
+        mutating func move(_ list: [Movement]) {
+            list.forEach { movement in
+                switch movement {
+                case .up(let distance):
+                    file.move(.up, distance: distance)
+                case .left(let distance):
+                    file.move(.left, distance: distance)
+                case .right(let distance):
+                    file.move(.right, distance: distance)
+                case .down(let distance):
+                    file.move(.down, distance: distance)
+                }
+            }
+        }
+
         // MARK: find
 
         private mutating func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
@@ -457,18 +472,7 @@ public class SwiftKilo {
                 case .delete:
                     let movementList = editor.file.deleteCharacter(at: editor.file.cursor.position)
 
-                    movementList.forEach { movement in
-                        switch movement {
-                        case .up(let distance):
-                            editor.file.move(.up, distance: distance)
-                        case .left(let distance):
-                            editor.file.move(.left, distance: distance)
-                        case .right(let distance):
-                            editor.file.move(.right, distance: distance)
-                        case .down(let distance):
-                            editor.file.move(.down, distance: distance)
-                        }
-                    }
+                    editor.move(movementList)
                 case .newLine:
                     editor.file.insertNewLine(after: editor.file.cursor.position)
 
