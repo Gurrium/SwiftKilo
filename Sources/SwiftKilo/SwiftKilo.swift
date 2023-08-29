@@ -137,16 +137,18 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func insert(_ char: Character, at position: Position) {
+        mutating func insert(_ char: Character, at position: Position) -> Movement? {
             if (position.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
 
-            guard position.y < rows.count else { return }
+            guard position.y < rows.count else { return nil }
 
             rows[position.y].insert(char, at: position.x)
 
             isDirty = true
+
+            return .right(distance: 1)
         }
 
         mutating func deleteCharacter(at position: Position) -> [Movement] {
@@ -479,9 +481,9 @@ public class SwiftKilo {
                     editor.move(.down, distance: 1)
                     editor.move(.left, distance: editor.file.cursor.position.x)
                 case .insert(let scalar):
-                    editor.file.insert(Character.init(scalar), at: editor.file.cursor.position)
-
-                    editor.move(.right, distance: 1)
+                    if let movement = editor.file.insert(Character.init(scalar), at: editor.file.cursor.position) {
+                        editor.move([movement])
+                    }
                 // editor
                 case .quit:
                     if editor.file.isDirty && editor.quitTimes > 0 {
