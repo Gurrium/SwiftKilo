@@ -105,12 +105,6 @@ public class SwiftKilo {
         private(set) var cursor = Cursor(position: .origin)
         private(set) var isDirty = false
 
-        var currentRow: Row? {
-            guard cursor.position.y < rows.count else { return nil }
-
-            return rows[cursor.position.y]
-        }
-
         init(path: String?) {
             if let path,
                let data = FileManager.default.contents(atPath: path),
@@ -182,7 +176,7 @@ public class SwiftKilo {
 
         // MARK: move
 
-        // TODO: Editorにメソッドを移す
+        // TODO: Editorにメソッドを移す ↓
         mutating func move(_ direction: Cursor.Direction, distance: Int) {
             cursor.move(direction, distance: distance)
 
@@ -202,6 +196,7 @@ public class SwiftKilo {
                 cursor.position.x = min(cursor.position.x, currentRow?.raw.count ?? 0)
             }
         }
+        // TODO: Editorにメソッドを移す ↑
 
         // MARK: find
 
@@ -234,6 +229,11 @@ public class SwiftKilo {
 
                 return nil
             } else {
+                var currentRow: Row?
+                if startPosition.y < rows.count {
+                    currentRow = rows[startPosition.y]
+                }
+
                 if let currentRow,
                    let range = currentRow.raw.range(of: str)
                 {
@@ -330,6 +330,11 @@ public class SwiftKilo {
             }
         }
 
+        var currentRow: File.Row? {
+            guard file.cursor.position.y < rows.count else { return nil }
+
+            return file.rows[file.cursor.position.y]
+        }
 
         init(
             screen: Screen,
@@ -454,7 +459,7 @@ public class SwiftKilo {
 
                     editor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editor.file.cursor.position.x < editor.file.currentRow?.raw.count ?? 0 else { break }
+                    guard editor.file.cursor.position.x < editor.currentRow?.raw.count ?? 0 else { break }
 
                     editor.move(.right, distance: 1)
                 case .moveCursorDown:
@@ -464,7 +469,7 @@ public class SwiftKilo {
                 case .moveCursorToBeginningOfLine:
                     editor.move(.left, distance: editor.file.cursor.position.x)
                 case .moveCursorToEndOfLine:
-                    editor.move(to: .init(x: editor.file.currentRow?.raw.count ?? 0, y: editor.file.cursor.position.y))
+                    editor.move(to: .init(x: editor.currentRow?.raw.count ?? 0, y: editor.file.cursor.position.y))
                 // page
                 case .movePageUp:
                     editor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
@@ -637,7 +642,7 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func scroll() {
-        editor.screen.cursor.position.x = editor.file.currentRow?.raw.prefix(editor.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
+        editor.screen.cursor.position.x = editor.currentRow?.raw.prefix(editor.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
             let (i, char) = e
             let d: Int
 
