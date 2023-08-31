@@ -101,8 +101,6 @@ public class SwiftKilo {
         }
 
         private(set) var rows: [Row]
-        // TODO: Editorに移す
-        private(set) var cursor = Cursor(position: .origin)
         private(set) var isDirty = false
 
         init(path: String?) {
@@ -173,30 +171,6 @@ public class SwiftKilo {
 
             isDirty = false
         }
-
-        // MARK: move
-
-        // TODO: Editorにメソッドを移す ↓
-        mutating func move(_ direction: Cursor.Direction, distance: Int) {
-            cursor.move(direction, distance: distance)
-
-            correctCursorPosition()
-        }
-
-        mutating func move(to position: Position) {
-            cursor.move(to: position)
-
-            correctCursorPosition()
-        }
-
-        mutating func correctCursorPosition() {
-            if cursor.position.y >= rows.count {
-                cursor.position = .init(x: 0, y: rows.count)
-            } else {
-                cursor.position.x = min(cursor.position.x, currentRow?.raw.count ?? 0)
-            }
-        }
-        // TODO: Editorにメソッドを移す ↑
 
         // MARK: find
 
@@ -313,6 +287,8 @@ public class SwiftKilo {
         var quitTimes = kQuitTimes
         var lastSearchResult: SearchResult?
 
+        private(set) var cursor = Cursor(position: .origin)
+
         var rows: [String] = []
         private mutating func buildRows() {
             rows = file.rows.map { row in
@@ -331,9 +307,9 @@ public class SwiftKilo {
         }
 
         var currentRow: File.Row? {
-            guard file.cursor.position.y < rows.count else { return nil }
+            guard cursor.position.y < rows.count else { return nil }
 
-            return file.rows[file.cursor.position.y]
+            return file.rows[cursor.position.y]
         }
 
         init(
@@ -358,25 +334,39 @@ public class SwiftKilo {
         // MARK: move
 
         mutating func move(_ direction: Cursor.Direction, distance: Int) {
-            file.move(direction, distance: distance)
+            cursor.move(direction, distance: distance)
+
+            correctCursorPosition()
         }
 
         mutating func move(to position: Position) {
-            file.move(to: position)
+            cursor.move(to: position)
+
+            correctCursorPosition()
         }
 
         mutating func move(_ list: [Movement]) {
             list.forEach { movement in
                 switch movement {
                 case .up(let distance):
-                    file.move(.up, distance: distance)
+                    move(.up, distance: distance)
                 case .left(let distance):
-                    file.move(.left, distance: distance)
+                    move(.left, distance: distance)
                 case .right(let distance):
-                    file.move(.right, distance: distance)
+                    move(.right, distance: distance)
                 case .down(let distance):
-                    file.move(.down, distance: distance)
+                    move(.down, distance: distance)
                 }
+            }
+
+            correctCursorPosition()
+        }
+
+        mutating func correctCursorPosition() {
+            if cursor.position.y >= rows.count {
+                cursor.position = .init(x: 0, y: rows.count)
+            } else {
+                cursor.position.x = min(cursor.position.x, currentRow?.raw.count ?? 0)
             }
         }
 
@@ -391,13 +381,13 @@ public class SwiftKilo {
         }
 
         mutating func find(_ str: String) -> Position? {
-            find(str, forward: true, from: file.cursor.position)
+            find(str, forward: true, from: cursor.position)
         }
 
         mutating func findNext() -> Position? {
             guard let lastSearchResult else { return nil }
 
-            var position = file.cursor.position
+            var position = cursor.position
             position.x += 1
 
             return find(lastSearchResult.target, forward: true, from: position)
@@ -406,7 +396,7 @@ public class SwiftKilo {
         mutating func findPrevious() -> Position? {
             guard let lastSearchResult else { return nil }
 
-            return find(lastSearchResult.target, forward: false, from: file.cursor.position)
+            return find(lastSearchResult.target, forward: false, from: cursor.position)
         }
     }
 
@@ -451,42 +441,42 @@ public class SwiftKilo {
                 switch action {
                 // cursor
                 case .moveCursorUp:
-                    guard editor.file.cursor.position.y > 0 else { break }
+                    guard editor.cursor.position.y > 0 else { break }
 
                     editor.move(.up, distance: 1)
                 case .moveCursorLeft:
-                    guard editor.file.cursor.position.x > 0 else { break }
+                    guard editor.cursor.position.x > 0 else { break }
 
                     editor.move(.left, distance: 1)
                 case .moveCursorRight:
-                    guard editor.file.cursor.position.x < editor.currentRow?.raw.count ?? 0 else { break }
+                    guard editor.cursor.position.x < editor.currentRow?.raw.count ?? 0 else { break }
 
                     editor.move(.right, distance: 1)
                 case .moveCursorDown:
-                    guard editor.file.cursor.position.y < editor.file.rows.count else { break }
+                    guard editor.cursor.position.y < editor.file.rows.count else { break }
 
                     editor.move(.down, distance: 1)
                 case .moveCursorToBeginningOfLine:
-                    editor.move(.left, distance: editor.file.cursor.position.x)
+                    editor.move(.left, distance: editor.cursor.position.x)
                 case .moveCursorToEndOfLine:
-                    editor.move(to: .init(x: editor.currentRow?.raw.count ?? 0, y: editor.file.cursor.position.y))
+                    editor.move(to: .init(x: editor.currentRow?.raw.count ?? 0, y: editor.cursor.position.y))
                 // page
                 case .movePageUp:
-                    editor.move(.up, distance: min(editor.screen.countOfRows, editor.file.cursor.position.y))
+                    editor.move(.up, distance: min(editor.screen.countOfRows, editor.cursor.position.y))
                 case .movePageDown:
-                    editor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.file.cursor.position.y))
+                    editor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.cursor.position.y))
                 // text
                 case .delete:
-                    let movementList = editor.file.deleteCharacter(at: editor.file.cursor.position)
+                    let movementList = editor.file.deleteCharacter(at: editor.cursor.position)
 
                     editor.move(movementList)
                 case .newLine:
-                    editor.file.insertNewLine(after: editor.file.cursor.position)
+                    editor.file.insertNewLine(after: editor.cursor.position)
 
                     editor.move(.down, distance: 1)
-                    editor.move(.left, distance: editor.file.cursor.position.x)
+                    editor.move(.left, distance: editor.cursor.position.x)
                 case .insert(let scalar):
-                    if let movement = editor.file.insert(Character.init(scalar), at: editor.file.cursor.position) {
+                    if let movement = editor.file.insert(Character.init(scalar), at: editor.cursor.position) {
                         editor.move([movement])
                     }
                 // editor
@@ -536,7 +526,7 @@ public class SwiftKilo {
                         editor.statusMessage = .init(content: "Can't save! I/O error: \(error.localizedDescription)")
                     }
                 case .find:
-                    let previousCursorPosition = editor.file.cursor.position
+                    let previousCursorPosition = editor.cursor.position
                     var didFind = false
 
                     editor.statusMessage = .init(content: "Search:")
@@ -642,7 +632,7 @@ public class SwiftKilo {
     // MARK: rendering
 
     private func scroll() {
-        editor.screen.cursor.position.x = editor.currentRow?.raw.prefix(editor.file.cursor.position.x).enumerated().reduce(0) { partialResult, e in
+        editor.screen.cursor.position.x = editor.currentRow?.raw.prefix(editor.cursor.position.x).enumerated().reduce(0) { partialResult, e in
             let (i, char) = e
             let d: Int
 
@@ -653,21 +643,21 @@ public class SwiftKilo {
             }
 
             return partialResult + d
-        } ?? editor.file.cursor.position.x
+        } ?? editor.cursor.position.x
 
-        if editor.file.cursor.position.y < editor.screen.rowOffset {
-            editor.screen.rowOffset = editor.file.cursor.position.y
+        if editor.cursor.position.y < editor.screen.rowOffset {
+            editor.screen.rowOffset = editor.cursor.position.y
         }
 
-        if editor.file.cursor.position.y >= editor.screen.rowOffset + editor.screen.countOfRows {
-            editor.screen.rowOffset = editor.file.cursor.position.y - editor.screen.countOfRows + 1
+        if editor.cursor.position.y >= editor.screen.rowOffset + editor.screen.countOfRows {
+            editor.screen.rowOffset = editor.cursor.position.y - editor.screen.countOfRows + 1
         }
 
-        if editor.file.cursor.position.x < editor.screen.columnOffset {
+        if editor.cursor.position.x < editor.screen.columnOffset {
             editor.screen.columnOffset = editor.screen.cursor.position.x
         }
 
-        if editor.file.cursor.position.x >= editor.screen.columnOffset + editor.screen.countOfColumns {
+        if editor.cursor.position.x >= editor.screen.columnOffset + editor.screen.countOfColumns {
             editor.screen.columnOffset = editor.screen.cursor.position.x - editor.screen.countOfColumns + 1
         }
     }
@@ -686,7 +676,7 @@ public class SwiftKilo {
         buffer.append("\r\n")
         drawMessageBar()
 
-        buffer.append("\u{1b}[\(editor.file.cursor.position.y - editor.screen.rowOffset + 1);\((editor.screen.cursor.position.x - editor.screen.columnOffset) + 1)H")
+        buffer.append("\u{1b}[\(editor.cursor.position.y - editor.screen.rowOffset + 1);\((editor.screen.cursor.position.x - editor.screen.columnOffset) + 1)H")
 
         buffer.append("\u{1b}[?25h")
 
@@ -729,7 +719,7 @@ public class SwiftKilo {
         buffer.append("\u{1b}[7m")
 
         let lstatus = "\(editor.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
-        let rstatus = "\(editor.file.cursor.position.y + 1)/\(editor.rows.count)"
+        let rstatus = "\(editor.cursor.position.y + 1)/\(editor.rows.count)"
 
         if lstatus.count + rstatus.count <= editor.screen.countOfColumns {
             buffer.append(([lstatus] + Array(repeating: " ", count: editor.screen.countOfColumns - lstatus.count - rstatus.count) + [rstatus]).joined())
