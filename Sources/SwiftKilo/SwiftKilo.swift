@@ -35,33 +35,25 @@ public class SwiftKilo {
         var y: Int
     }
 
-    enum Movement {
-        case up(distance: Int)
-        case down(distance: Int)
-        case left(distance: Int)
-        case right(distance: Int)
-    }
-
     struct Cursor {
         var position: Position
 
-        // TODO: Movementに置き換える
-        enum Direction {
-            case up
-            case down
-            case left
-            case right
+        enum Movement {
+            case up(distance: Int)
+            case down(distance: Int)
+            case left(distance: Int)
+            case right(distance: Int)
         }
 
-        mutating func move(_ direction: Direction, distance: Int) {
-            switch direction {
-            case .up:
+        mutating func move(_ movement: Movement) {
+            switch movement {
+            case .up(let distance):
                 position.y = position.y - distance
-            case .down:
+            case .down(let distance):
                 position.y = position.y + distance
-            case .left:
+            case .left(let distance):
                 position.x = position.x - distance
-            case .right:
+            case .right(let distance):
                 position.x = position.x + distance
             }
         }
