@@ -121,7 +121,7 @@ public class SwiftKilo {
             isDirty = true
         }
 
-        mutating func insert(_ char: Character, at position: Position) -> Movement? {
+        mutating func insert(_ char: Character, at position: Position) -> Cursor.Movement? {
             if (position.y == rows.count) {
                 rows.append(Row(raw: ""))
             }
@@ -135,7 +135,7 @@ public class SwiftKilo {
             return .right(distance: 1)
         }
 
-        mutating func deleteCharacter(at position: Position) -> [Movement] {
+        mutating func deleteCharacter(at position: Position) -> [Cursor.Movement] {
             defer {
                 isDirty = true
             }
