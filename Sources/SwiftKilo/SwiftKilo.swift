@@ -325,31 +325,14 @@ public class SwiftKilo {
 
         // MARK: move
 
-        mutating func move(_ direction: Cursor.Direction, distance: Int) {
-            cursor.move(direction, distance: distance)
+        mutating func move(_ movement: Cursor.Movement) {
+            cursor.move(movement)
 
             correctCursorPosition()
         }
 
         mutating func move(to position: Position) {
             cursor.move(to: position)
-
-            correctCursorPosition()
-        }
-
-        mutating func move(_ list: [Movement]) {
-            list.forEach { movement in
-                switch movement {
-                case .up(let distance):
-                    move(.up, distance: distance)
-                case .left(let distance):
-                    move(.left, distance: distance)
-                case .right(let distance):
-                    move(.right, distance: distance)
-                case .down(let distance):
-                    move(.down, distance: distance)
-                }
-            }
 
             correctCursorPosition()
         }
@@ -435,41 +418,41 @@ public class SwiftKilo {
                 case .moveCursorUp:
                     guard editor.cursor.position.y > 0 else { break }
 
-                    editor.move(.up, distance: 1)
+                    editor.move(.up(distance: 1))
                 case .moveCursorLeft:
                     guard editor.cursor.position.x > 0 else { break }
 
-                    editor.move(.left, distance: 1)
+                    editor.move(.left(distance: 1))
                 case .moveCursorRight:
                     guard editor.cursor.position.x < editor.currentRow?.raw.count ?? 0 else { break }
 
-                    editor.move(.right, distance: 1)
+                    editor.move(.right(distance: 1))
                 case .moveCursorDown:
                     guard editor.cursor.position.y < editor.file.rows.count else { break }
 
-                    editor.move(.down, distance: 1)
+                    editor.move(.down(distance: 1))
                 case .moveCursorToBeginningOfLine:
-                    editor.move(.left, distance: editor.cursor.position.x)
+                    editor.move(.left(distance: editor.cursor.position.x))
                 case .moveCursorToEndOfLine:
                     editor.move(to: .init(x: editor.currentRow?.raw.count ?? 0, y: editor.cursor.position.y))
                 // page
                 case .movePageUp:
-                    editor.move(.up, distance: min(editor.screen.countOfRows, editor.cursor.position.y))
+                    editor.move(.up(distance: min(editor.screen.countOfRows, editor.cursor.position.y)))
                 case .movePageDown:
-                    editor.move(.down, distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.cursor.position.y))
+                    editor.move(.down(distance: min(editor.screen.countOfRows, editor.file.rows.count - editor.cursor.position.y)))
                 // text
                 case .delete:
                     let movementList = editor.file.deleteCharacter(at: editor.cursor.position)
 
-                    editor.move(movementList)
+                    movementList.forEach { editor.move($0) }
                 case .newLine:
                     editor.file.insertNewLine(after: editor.cursor.position)
 
-                    editor.move(.down, distance: 1)
-                    editor.move(.left, distance: editor.cursor.position.x)
+                    editor.move(.down(distance: 1))
+                    editor.move(.left(distance: editor.cursor.position.x))
                 case .insert(let scalar):
                     if let movement = editor.file.insert(Character.init(scalar), at: editor.cursor.position) {
-                        editor.move([movement])
+                        editor.move(movement)
                     }
                 // editor
                 case .quit:
