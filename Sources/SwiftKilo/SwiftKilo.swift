@@ -166,7 +166,6 @@ public class SwiftKilo {
 
         // MARK: find
 
-
         func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
             var rowsBefore = Array(rows[0..<startPosition.y])
             var rowsAfter = Array(rows[startPosition.y..<rows.endIndex])
@@ -403,8 +402,6 @@ public class SwiftKilo {
 
     private func main() async throws {
         enableRawMode()
-//
-//        try openEditor()
 
         editor.statusMessage = StatusMessage(content: "HELP: Ctrl-S = save | Ctrl-Q = quit | / = find")
 
