@@ -267,12 +267,17 @@ public class SwiftKilo {
 
         var screen: Screen
         var origTermios: termios
+
         var path: String?
-        var file: File {
+        var isDirty: Bool {
+            file.isDirty
+        }
+        private var file: File {
             didSet {
                 buildRows()
             }
         }
+
         var statusMessage: StatusMessage?
         var mode = Mode.normal
         var quitTimes = kQuitTimes
@@ -453,7 +458,7 @@ public class SwiftKilo {
                     }
                 // editor
                 case .quit:
-                    if editor.file.isDirty && editor.quitTimes > 0 {
+                    if editor.isDirty && editor.quitTimes > 0 {
                         editor.statusMessage = .init(content: "WARNING!!! File has unsaved changes. Press Ctrl-Q \(editor.quitTimes) more times to quit.")
                         editor.quitTimes -= 1
 
@@ -690,7 +695,7 @@ public class SwiftKilo {
     private func drawStatusBar() {
         buffer.append("\u{1b}[7m")
 
-        let lstatus = "\(editor.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.file.isDirty ? "(modified)" : "")"
+        let lstatus = "\(editor.path?.prefix(20) ?? "[No Name]") - \(editor.rows.count) lines \(editor.isDirty ? "(modified)" : "")"
         let rstatus = "\(editor.cursor.position.y + 1)/\(editor.rows.count)"
 
         if lstatus.count + rstatus.count <= editor.screen.countOfColumns {
