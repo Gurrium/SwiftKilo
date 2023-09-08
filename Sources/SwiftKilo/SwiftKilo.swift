@@ -351,14 +351,6 @@ public class SwiftKilo {
 
         // MARK: find
 
-        private mutating func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
-            let matchedPosition = file.find(str, forward: forward, from: startPosition)
-
-            lastSearchResult = SearchResult(target: str, position: matchedPosition)
-
-            return matchedPosition
-        }
-
         mutating func find(_ str: String) -> Position? {
             find(str, forward: true, from: cursor.position)
         }
@@ -376,6 +368,14 @@ public class SwiftKilo {
             guard let lastSearchResult else { return nil }
 
             return find(lastSearchResult.target, forward: false, from: cursor.position)
+        }
+
+        private mutating func find(_ str: String, forward: Bool, from startPosition: Position) -> Position? {
+            let matchedPosition = file.find(str, forward: forward, from: startPosition)
+
+            lastSearchResult = SearchResult(target: str, position: matchedPosition)
+
+            return matchedPosition
         }
 
         // MARK: edit
