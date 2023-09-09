@@ -260,6 +260,20 @@ public class SwiftKilo {
     }
 
     struct Editor {
+        enum Highlight {
+            case normal
+            case number
+
+            var color: Int {
+                switch self {
+                case .normal:
+                    return 37
+                case .number:
+                    return 31
+                }
+            }
+        }
+
         struct SearchResult {
             var target: String
             var position: Position?
@@ -292,7 +306,7 @@ public class SwiftKilo {
                     if egc == "\t" {
                         return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
                     } else if "0123456789".contains(where: { $0 == egc }) {
-                        return Array("\u{1b}[31m") + [egc] + Array("\u{1b}[39m")
+                        return Array("\u{1b}[\(Highlight.number.color)m") + [egc] + Array("\u{1b}[39m")
                     } else {
                         return  [egc]
                     }
