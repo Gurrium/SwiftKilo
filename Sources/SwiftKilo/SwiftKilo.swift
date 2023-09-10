@@ -301,14 +301,24 @@ public class SwiftKilo {
 
         var rows: [String] = []
         private mutating func buildRows() {
+            var currentHilight: Highlight?
+
             rows = file.rows.map { row in
                 let chopped = row.raw.enumerated().flatMap { i, egc in
                     if egc == "\t" {
                         return Array(repeating: Character(" "), count: kTabStop - (i % kTabStop))
-                    } else if "0123456789".contains(where: { $0 == egc }) {
-                        return Array("\u{1b}[\(Highlight.number.color)m") + [egc] + Array("\u{1b}[39m")
+                    }
+
+                    if "0123456789".contains(where: { $0 == egc }) {
+                        currentHilight = .number
                     } else {
-                        return  [egc]
+                        currentHilight = nil
+                    }
+
+                    if let currentHilight {
+                        return Array("\u{1b}[\(currentHilight.color)m") + [egc]
+                    } else {
+                        return Array("\u{1b}[39m") + [egc]
                     }
                 }
 
